@@ -50,3 +50,20 @@ export function compressAndResizeImage(file: File, maxWidth = 600, quality = 0.7
     reader.onerror = (error) => reject(error);
   });
 }
+
+export function uploadWithTimeout<T>(promise: Promise<T>, ms = 8000): Promise<T> {
+  let timeoutId: any;
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error('Upload timeout')), ms);
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeoutId));
+}
+
+export function blobToDataURL(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}

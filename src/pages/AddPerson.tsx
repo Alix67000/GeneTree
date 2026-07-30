@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { useFamily } from '@/hooks/useFamily';
 import { usePersons } from '@/hooks/usePersons';
 import { Gender } from '@/types';
-import { compressAndResizeImage } from '@/lib/imageOptimizer';
+import { compressAndResizeImage, uploadWithTimeout, blobToDataURL } from '@/lib/imageOptimizer';
 import { FiUpload, FiImage } from 'react-icons/fi';
 
 export function AddPerson() {
@@ -114,18 +114,24 @@ export function AddPerson() {
           // Compress and resize image to WebP
           const compressedBlob = await compressAndResizeImage(photoFile, 600, 0.7);
           const storageRef = ref(storage, `family_photos/${Date.now()}_${photoFile.name.replace(/\.[^/.]+$/, '')}.webp`);
-          const snapshot = await uploadBytes(storageRef, compressedBlob, { contentType: 'image/webp' });
+          const snapshot = await uploadWithTimeout(uploadBytes(storageRef, compressedBlob, { contentType: 'image/webp' }), 8000);
           finalPhotoUrl = await getDownloadURL(snapshot.ref);
         } catch (uploadError: any) {
-          console.error('Photo upload error:', uploadError);
-          const proceedWithoutPhoto = window.confirm(
-            "Erreur d'envoi de la photo : vérifiez que Firebase Storage est activé et que ses règles autorisent l'écriture (request.auth != null).\n\nVoulez-vous enregistrer la fiche sans la photo ?"
-          );
-          if (!proceedWithoutPhoto) {
-            setLoading(false);
-            return;
+          console.error('Photo upload error or timeout, falling back to local Base64 WebP:', uploadError);
+          try {
+            const compressedBlob = await compressAndResizeImage(photoFile, 600, 0.7);
+            finalPhotoUrl = await blobToDataURL(compressedBlob);
+          } catch (fallbackErr) {
+            console.error('Fallback Base64 conversion failed:', fallbackErr);
+            const proceedWithoutPhoto = window.confirm(
+              "Erreur d'envoi de la photo : Firebase Storage indisponible. Voulez-vous enregistrer la fiche sans la photo ?"
+            );
+            if (!proceedWithoutPhoto) {
+              setLoading(false);
+              return;
+            }
+            finalPhotoUrl = formData.photoUrl;
           }
-          finalPhotoUrl = formData.photoUrl;
         }
       }
 
