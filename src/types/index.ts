@@ -30,6 +30,8 @@ export interface Family {
 export interface AuthContextType {
   currentUser: FirebaseUser | null;
   loginWithGoogle: () => Promise<any>;
+  loginWithEmail: (email: string, password: string) => Promise<any>;
+  registerWithEmail: (email: string, password: string) => Promise<any>;
   logout: () => Promise<void>;
 }
 

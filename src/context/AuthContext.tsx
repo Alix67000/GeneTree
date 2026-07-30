@@ -1,5 +1,13 @@
 import React, { createContext, useState, useEffect } from 'react';
-import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User as FirebaseUser } from 'firebase/auth';
+import { 
+  onAuthStateChanged, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  signOut, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  User as FirebaseUser 
+} from 'firebase/auth';
 import { auth } from '@/services/firebase';
 import { AuthContextType } from '@/types';
 
@@ -22,6 +30,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return signInWithPopup(auth, provider);
   };
 
+  const loginWithEmail = (email: string, password: string) => {
+    return signInWithEmailAndPassword(auth, email, password);
+  };
+
+  const registerWithEmail = (email: string, password: string) => {
+    return createUserWithEmailAndPassword(auth, email, password);
+  };
+
   const logout = () => {
     return signOut(auth);
   };
@@ -29,6 +45,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value = {
     currentUser,
     loginWithGoogle,
+    loginWithEmail,
+    registerWithEmail,
     logout,
   };
 
