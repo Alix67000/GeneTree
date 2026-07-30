@@ -110,11 +110,23 @@ export function AddPerson() {
       let finalPhotoUrl = formData.photoUrl;
 
       if (photoFile) {
-        // Compress and resize image to WebP
-        const compressedBlob = await compressAndResizeImage(photoFile, 600, 0.7);
-        const storageRef = ref(storage, `family_photos/${Date.now()}_${photoFile.name.replace(/\.[^/.]+$/, '')}.webp`);
-        const snapshot = await uploadBytes(storageRef, compressedBlob, { contentType: 'image/webp' });
-        finalPhotoUrl = await getDownloadURL(snapshot.ref);
+        try {
+          // Compress and resize image to WebP
+          const compressedBlob = await compressAndResizeImage(photoFile, 600, 0.7);
+          const storageRef = ref(storage, `family_photos/${Date.now()}_${photoFile.name.replace(/\.[^/.]+$/, '')}.webp`);
+          const snapshot = await uploadBytes(storageRef, compressedBlob, { contentType: 'image/webp' });
+          finalPhotoUrl = await getDownloadURL(snapshot.ref);
+        } catch (uploadError: any) {
+          console.error('Photo upload error:', uploadError);
+          const proceedWithoutPhoto = window.confirm(
+            "Erreur d'envoi de la photo : vérifiez que Firebase Storage est activé et que ses règles autorisent l'écriture (request.auth != null).\n\nVoulez-vous enregistrer la fiche sans la photo ?"
+          );
+          if (!proceedWithoutPhoto) {
+            setLoading(false);
+            return;
+          }
+          finalPhotoUrl = formData.photoUrl;
+        }
       }
 
       const payload = {
