@@ -15,6 +15,9 @@ export interface Person {
   isLiving?: boolean;
   notes?: string;
   photoUrl?: string;
+  parentId1?: string;
+  parentId2?: string;
+  spouseId?: string;
   createdAt?: string | { toDate: () => Date };
   updatedAt?: string | { toDate: () => Date };
 }

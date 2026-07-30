@@ -6,11 +6,13 @@ import { COLLECTIONS, GENDER_OPTIONS } from '@/lib/constants';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useFamily } from '@/hooks/useFamily';
+import { usePersons } from '@/hooks/usePersons';
 import { Gender } from '@/types';
 
 export function AddPerson() {
   const navigate = useNavigate();
   const { activeFamilyId } = useFamily();
+  const { persons } = usePersons();
   const [loading, setLoading] = useState<boolean>(false);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -22,6 +24,9 @@ export function AddPerson() {
     deathDate: '',
     deathPlace: '',
     notes: '',
+    parentId1: '',
+    parentId2: '',
+    spouseId: '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -159,6 +164,51 @@ export function AddPerson() {
               </div>
             </div>
           )}
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-border">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-text-primary">Parent 1</label>
+              <select 
+                name="parentId1" 
+                value={formData.parentId1} 
+                onChange={handleChange}
+                className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50 bg-white"
+              >
+                <option value="">None / Unknown</option>
+                {persons.map(p => (
+                  <option key={p.id} value={p.id}>{p.firstName} {p.lastName}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-text-primary">Parent 2</label>
+              <select 
+                name="parentId2" 
+                value={formData.parentId2} 
+                onChange={handleChange}
+                className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50 bg-white"
+              >
+                <option value="">None / Unknown</option>
+                {persons.map(p => (
+                  <option key={p.id} value={p.id}>{p.firstName} {p.lastName}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-text-primary">Conjoint(e)</label>
+              <select 
+                name="spouseId" 
+                value={formData.spouseId} 
+                onChange={handleChange}
+                className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50 bg-white"
+              >
+                <option value="">None / Unknown</option>
+                {persons.map(p => (
+                  <option key={p.id} value={p.id}>{p.firstName} {p.lastName}</option>
+                ))}
+              </select>
+            </div>
+          </div>
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-text-primary">Notes</label>

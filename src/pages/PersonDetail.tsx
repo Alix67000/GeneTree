@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { COLLECTIONS } from '@/lib/constants';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { getInitials } from '@/lib/utils';
-import { FiArrowLeft } from 'react-icons/fi';
+import { FiArrowLeft, FiUser, FiHeart, FiUsers } from 'react-icons/fi';
 import { Person } from '@/types';
+import { usePersons } from '@/hooks/usePersons';
 
 export function PersonDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { persons } = usePersons();
   const [person, setPerson] = useState<Person | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -35,6 +37,11 @@ export function PersonDetail() {
 
   if (loading) return <div className="flex justify-center p-12"><div className="animate-pulse w-8 h-8 rounded-full bg-primary/20"></div></div>;
   if (!person) return <div className="text-center p-12"><p className="text-xl text-text-secondary">Person not found.</p></div>;
+
+  const parent1 = persons.find(p => p.id === person.parentId1);
+  const parent2 = persons.find(p => p.id === person.parentId2);
+  const spouse = persons.find(p => p.id === person.spouseId);
+  const children = persons.filter(p => p.parentId1 === person.id || p.parentId2 === person.id);
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
@@ -72,6 +79,65 @@ export function PersonDetail() {
             <div className="flex justify-between border-b border-border pb-2">
               <span className="text-text-secondary text-xs uppercase tracking-widest font-medium">Died</span>
               <span className="text-sm font-semibold">{person.deathDate || (person.isLiving ? 'Living' : 'Unknown')} {person.deathPlace && `• ${person.deathPlace}`}</span>
+            </div>
+          </div>
+
+          {/* Relationships section */}
+          <div className="pt-4 border-t border-border space-y-3">
+            <p className="text-sm font-semibold text-text-primary">Family Relationships</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+              <div className="p-3 bg-background/50 border border-border rounded-xl">
+                <span className="text-xs text-text-secondary block font-medium">Parent 1</span>
+                {parent1 ? (
+                  <Link to={`/person/${parent1.id}`} className="text-primary font-semibold hover:underline flex items-center gap-1 mt-1">
+                    <FiUser className="w-3.5 h-3.5" /> {parent1.firstName} {parent1.lastName}
+                  </Link>
+                ) : (
+                  <span className="text-text-secondary/60 italic text-xs mt-1 block">Not specified</span>
+                )}
+              </div>
+
+              <div className="p-3 bg-background/50 border border-border rounded-xl">
+                <span className="text-xs text-text-secondary block font-medium">Parent 2</span>
+                {parent2 ? (
+                  <Link to={`/person/${parent2.id}`} className="text-primary font-semibold hover:underline flex items-center gap-1 mt-1">
+                    <FiUser className="w-3.5 h-3.5" /> {parent2.firstName} {parent2.lastName}
+                  </Link>
+                ) : (
+                  <span className="text-text-secondary/60 italic text-xs mt-1 block">Not specified</span>
+                )}
+              </div>
+
+              <div className="p-3 bg-background/50 border border-border rounded-xl">
+                <span className="text-xs text-text-secondary block font-medium">Conjoint(e)</span>
+                {spouse ? (
+                  <Link to={`/person/${spouse.id}`} className="text-primary font-semibold hover:underline flex items-center gap-1 mt-1">
+                    <FiHeart className="w-3.5 h-3.5 text-accent" /> {spouse.firstName} {spouse.lastName}
+                  </Link>
+                ) : (
+                  <span className="text-text-secondary/60 italic text-xs mt-1 block">Not specified</span>
+                )}
+              </div>
+            </div>
+
+            {/* Children list */}
+            <div className="pt-3">
+              <span className="text-xs text-text-secondary block font-medium mb-2">Children ({children.length})</span>
+              {children.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {children.map(child => (
+                    <Link 
+                      key={child.id} 
+                      to={`/person/${child.id}`}
+                      className="px-3 py-1.5 bg-primary/5 hover:bg-primary/10 border border-primary/20 text-primary rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                    >
+                      <FiUsers className="w-3 h-3" /> {child.firstName} {child.lastName}
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-text-secondary/60 italic">No children registered.</p>
+              )}
             </div>
           </div>
 
