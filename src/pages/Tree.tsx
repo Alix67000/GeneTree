@@ -15,7 +15,8 @@ export function Tree() {
   const { persons, loading } = usePersons();
   const [viewMode, setViewMode] = useState<'tree' | 'grid'>('tree');
   const [centralPersonId, setCentralPersonId] = useState<string>('');
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [focusedPersonId, setFocusedPersonId] = useState<string | null>(null);
+  const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
   
   // Global family view panel state
   const [isGlobalPanelOpen, setIsGlobalPanelOpen] = useState<boolean>(true);
@@ -179,6 +180,7 @@ export function Tree() {
     if ((e.target as HTMLElement).closest('.person-card') || (e.target as HTMLElement).closest('button')) return;
     setIsDragging(true);
     setDragStart({ x: e.clientX - transform.x, y: e.clientY - transform.y });
+    setDragStartPos({ x: e.clientX, y: e.clientY });
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -190,8 +192,12 @@ export function Tree() {
     }));
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e: React.MouseEvent) => {
     setIsDragging(false);
+    if ((e.target as HTMLElement).closest('.person-card') || (e.target as HTMLElement).closest('button')) return;
+    if (Math.abs(e.clientX - dragStartPos.x) < 5 && Math.abs(e.clientY - dragStartPos.y) < 5) {
+      setFocusedPersonId(null);
+    }
   };
 
   if (loading) {
@@ -200,14 +206,13 @@ export function Tree() {
 
   const centralPerson = persons.find(p => p.id === centralPersonId) || persons[0];
 
-  const isConnectedToHovered = (pId: string) => {
-    if (!hoveredId) return false;
-    if (hoveredId === pId) return true;
-    const p = persons.find(per => per.id === hoveredId);
+  const isConnectedToFocused = (pId: string) => {
+    if (!focusedPersonId) return false;
+    if (focusedPersonId === pId) return true;
+    const p = persons.find(per => per.id === focusedPersonId);
     if (!p) return false;
-    // Highlight parents, children, spouse of hovered
     return p.parentId1 === pId || p.parentId2 === pId || p.spouseId === pId || 
-           persons.some(c => (c.parentId1 === hoveredId || c.parentId2 === hoveredId) && c.id === pId);
+           persons.some(c => (c.parentId1 === focusedPersonId || c.parentId2 === focusedPersonId) && c.id === pId);
   };
 
   const filteredGlobalPersons = persons.filter(p => 
@@ -215,20 +220,21 @@ export function Tree() {
   );
 
   const renderPersonCard = (p: Person, roleLabel: string, badgeStyle: string, isCentral = false) => {
-    const isHighlighted = isConnectedToHovered(p.id) || highlightedPersonId === p.id;
+    const isFocused = focusedPersonId ? isConnectedToFocused(p.id) : false;
+    const isDimmed = focusedPersonId ? !isFocused : false;
+    const isHighlighted = highlightedPersonId === p.id;
     const cParentsCount = (p.parentId1 ? 1 : 0) + (p.parentId2 ? 1 : 0);
     const cChildrenCount = persons.filter(c => c.parentId1 === p.id || c.parentId2 === p.id).length;
 
     return (
       <div 
-        className={`flex flex-col items-center transition-all duration-300 ${isHighlighted ? 'scale-110 ring-4 ring-accent rounded-2xl p-1 bg-accent/10 z-20' : hoveredId ? 'opacity-40 z-0' : 'z-10'}`}
-        onMouseEnter={() => setHoveredId(p.id)}
-        onMouseLeave={() => setHoveredId(null)}
+        className={`flex flex-col items-center transition-all duration-300 ${isDimmed ? 'opacity-30 grayscale pointer-events-none' : 'opacity-100'} ${isHighlighted ? 'scale-105 ring-4 ring-accent rounded-2xl p-1 bg-accent/10 z-20' : 'z-10'}`}
+        onClick={(e) => { e.stopPropagation(); setFocusedPersonId(p.id); }}
       >
         <span className={`text-[10px] font-bold uppercase tracking-wider mb-2 px-3 py-1 rounded-full border shadow-xs transition-colors ${badgeStyle}`}>
           {roleLabel}
         </span>
-        <Card className={`transition-all w-64 p-5 flex flex-col items-center text-center space-y-3 bg-white border ${isCentral ? 'ring-4 ring-primary/30 border-primary shadow-lg' : isHighlighted ? 'ring-2 ring-accent border-accent shadow-xl' : 'border-border/80 hover:border-primary/50 hover:shadow-md'}`}>
+        <Card className={`transition-all w-64 p-5 flex flex-col items-center text-center space-y-3 bg-white border ${isCentral ? 'ring-4 ring-primary/30 border-primary shadow-lg' : isFocused ? 'ring-2 ring-primary border-primary shadow-xl' : 'border-border/80 hover:shadow-md cursor-pointer'}`}>
           <div className="w-16 h-16 rounded-full border-2 border-accent bg-border ring-4 ring-primary/5 shadow-md flex items-center justify-center text-xl font-display font-medium text-text-primary overflow-hidden shrink-0">
             {p.photoUrl ? (
               <img src={p.photoUrl} alt={`${p.firstName} ${p.lastName}`} className="w-full h-full object-cover" />
@@ -391,6 +397,14 @@ export function Tree() {
               style={{ transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})` }}
             >
               <svg className="absolute overflow-visible pointer-events-none" style={{ left: 0, top: 0, width: '100%', height: '100%' }}>
+                <defs>
+                  <marker id="arrow-active" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" className="fill-primary" />
+                  </marker>
+                  <marker id="arrow-inactive" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" className="fill-slate-300" />
+                  </marker>
+                </defs>
                 {persons.map(p => {
                   const paths = [];
                   const childX = xPos.get(p.id) || 0;
@@ -400,24 +414,26 @@ export function Tree() {
                   if (p.parentId1) {
                     const p1X = xPos.get(p.parentId1) || 0;
                     const p1Y = (levels.get(p.parentId1) || 0) * 350;
-                    const isHighlighted = highlightedPersonId === p.id || highlightedPersonId === p.parentId1 || hoveredId === p.id || hoveredId === p.parentId1;
+                    const isActive = focusedPersonId ? (p.id === focusedPersonId || p.parentId1 === focusedPersonId) : false;
                     paths.push(
                       <path 
                         key={`${p.id}-p1`}
                         d={`M ${p1X} ${p1Y + offset} C ${p1X} ${p1Y + offset + 80}, ${childX} ${childY - offset - 80}, ${childX} ${childY - offset}`}
-                        className={`fill-none stroke-2 transition-all duration-300 ${isHighlighted ? 'stroke-accent animate-flow' : 'stroke-primary/30 animate-flow'}`}
+                        markerEnd={`url(#arrow-${isActive ? 'active' : 'inactive'})`}
+                        className={`fill-none stroke-2 transition-all duration-300 ${isActive ? 'stroke-primary animate-flow' : 'stroke-slate-300/60'}`}
                       />
                     );
                   }
                   if (p.parentId2) {
                     const p2X = xPos.get(p.parentId2) || 0;
                     const p2Y = (levels.get(p.parentId2) || 0) * 350;
-                    const isHighlighted = highlightedPersonId === p.id || highlightedPersonId === p.parentId2 || hoveredId === p.id || hoveredId === p.parentId2;
+                    const isActive = focusedPersonId ? (p.id === focusedPersonId || p.parentId2 === focusedPersonId) : false;
                     paths.push(
                       <path 
                         key={`${p.id}-p2`}
                         d={`M ${p2X} ${p2Y + offset} C ${p2X} ${p2Y + offset + 80}, ${childX} ${childY - offset - 80}, ${childX} ${childY - offset}`}
-                        className={`fill-none stroke-2 transition-all duration-300 ${isHighlighted ? 'stroke-accent animate-flow' : 'stroke-primary/30 animate-flow'}`}
+                        markerEnd={`url(#arrow-${isActive ? 'active' : 'inactive'})`}
+                        className={`fill-none stroke-2 transition-all duration-300 ${isActive ? 'stroke-primary animate-flow' : 'stroke-slate-300/60'}`}
                       />
                     );
                   }
@@ -425,12 +441,12 @@ export function Tree() {
                   if (p.spouseId && p.id < p.spouseId) {
                     const sX = xPos.get(p.spouseId) || 0;
                     const sY = (levels.get(p.spouseId) || 0) * 350;
-                    const isHighlighted = highlightedPersonId === p.id || highlightedPersonId === p.spouseId || hoveredId === p.id || hoveredId === p.spouseId;
+                    const isActive = focusedPersonId ? (p.id === focusedPersonId || p.spouseId === focusedPersonId) : false;
                     paths.push(
                       <g key={`${p.id}-spouse`}>
                         <path 
                           d={`M ${childX + 130} ${childY} L ${sX - 130} ${sY}`}
-                          className={`fill-none stroke-2 transition-all duration-300 ${isHighlighted ? 'stroke-rose-400' : 'stroke-rose-200 stroke-dasharray-[4_4]'}`}
+                          className={`fill-none stroke-2 transition-all duration-300 ${isActive ? 'stroke-rose-400 animate-flow' : 'stroke-rose-200 stroke-dasharray-[4_4]'}`}
                         />
                         <rect x={(childX + sX)/2 - 12} y={childY - 12} width="24" height="24" rx="12" fill="#fff" className="stroke-rose-200 stroke-1" />
                         <text x={(childX + sX)/2} y={childY + 4} textAnchor="middle" fontSize="12" fill="#f43f5e">♥</text>
