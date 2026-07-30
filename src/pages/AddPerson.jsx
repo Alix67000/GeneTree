@@ -1,0 +1,181 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../services/firebase';
+import { COLLECTIONS, GENDER_OPTIONS } from '../lib/constants';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { useFamily } from '../hooks/useFamily';
+
+export function AddPerson() {
+  const navigate = useNavigate();
+  const { activeFamilyId } = useFamily();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    gender: 'unknown',
+    birthDate: '',
+    birthPlace: '',
+    isLiving: true,
+    deathDate: '',
+    deathPlace: '',
+    notes: '',
+  });
+
+  const handleChange = (e) => {
+    // Handle both checkbox and text inputs appropriately
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    setFormData(prev => ({ ...prev, [e.target.name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      // Save new person to Firestore collection
+      await addDoc(collection(db, COLLECTIONS.PERSONS), {
+        ...formData,
+        familyId: activeFamilyId || 'default_family', // Using a default if not set for demo
+        createdAt: serverTimestamp(),
+      });
+      // Navigate back to the tree view after successful save
+      navigate('/tree');
+    } catch (error) {
+      console.error('Error adding person:', error);
+      alert('Failed to add person. See console for details.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-3xl font-display font-semibold text-text-primary">Add New Person</h1>
+        <p className="text-text-secondary mt-1">Enter details to add a new relative to your family tree.</p>
+      </div>
+
+      <Card>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-text-primary">First Name *</label>
+              <input 
+                required
+                type="text" 
+                name="firstName" 
+                value={formData.firstName} 
+                onChange={handleChange}
+                className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-text-primary">Last Name *</label>
+              <input 
+                required
+                type="text" 
+                name="lastName" 
+                value={formData.lastName} 
+                onChange={handleChange}
+                className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-text-primary">Gender</label>
+            <select 
+              name="gender" 
+              value={formData.gender} 
+              onChange={handleChange}
+              className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50 bg-white"
+            >
+              {GENDER_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-text-primary">Birth Date</label>
+              <input 
+                type="date" 
+                name="birthDate" 
+                value={formData.birthDate} 
+                onChange={handleChange}
+                className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-text-primary">Birth Place</label>
+              <input 
+                type="text" 
+                name="birthPlace" 
+                value={formData.birthPlace} 
+                onChange={handleChange}
+                className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 py-2">
+            <input 
+              type="checkbox" 
+              name="isLiving" 
+              id="isLiving"
+              checked={formData.isLiving} 
+              onChange={handleChange}
+              className="w-5 h-5 rounded border-border text-primary focus:ring-primary/50"
+            />
+            <label htmlFor="isLiving" className="text-sm font-medium text-text-primary cursor-pointer">This person is living</label>
+          </div>
+
+          {!formData.isLiving && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-black/5 rounded-xl">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-text-primary">Death Date</label>
+                <input 
+                  type="date" 
+                  name="deathDate" 
+                  value={formData.deathDate} 
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-text-primary">Death Place</label>
+                <input 
+                  type="text" 
+                  name="deathPlace" 
+                  value={formData.deathPlace} 
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-text-primary">Notes</label>
+            <textarea 
+              name="notes" 
+              rows={4}
+              value={formData.notes} 
+              onChange={handleChange}
+              className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+              placeholder="Add any biographical notes..."
+            />
+          </div>
+
+          <div className="flex justify-end gap-4 pt-4 border-t border-border">
+            <Button type="button" variant="ghost" onClick={() => navigate(-1)}>Cancel</Button>
+            <Button type="submit" disabled={loading}>{loading ? 'Saving...' : 'Save Person'}</Button>
+          </div>
+        </form>
+      </Card>
+    </div>
+  );
+}
