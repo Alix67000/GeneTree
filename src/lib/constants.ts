@@ -1,10 +1,12 @@
+import { Gender } from '@/types';
+
 export const COLLECTIONS = {
   PERSONS: 'persons',
   FAMILIES: 'families',
   PHOTOS: 'photos',
 };
 
-export const GENDER_OPTIONS = [
+export const GENDER_OPTIONS: { value: Gender; label: string }[] = [
   { value: 'male', label: 'Male' },
   { value: 'female', label: 'Female' },
   { value: 'other', label: 'Other' },

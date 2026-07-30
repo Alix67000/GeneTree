@@ -1,11 +1,12 @@
 import React, { createContext, useState, useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
+import { FamilyContextType } from '@/types';
 
-export const FamilyContext = createContext();
+export const FamilyContext = createContext<FamilyContextType | null>(null);
 
-export function FamilyProvider({ children }) {
+export function FamilyProvider({ children }: { children: React.ReactNode }) {
   const { currentUser } = useAuth();
-  const [activeFamilyId, setActiveFamilyId] = useState(null);
+  const [activeFamilyId, setActiveFamilyId] = useState<string | null>(null);
 
   // Here you would typically fetch families for the user
   useEffect(() => {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
-import { Button } from '../ui/Button';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/Button';
 
 export function Header() {
   const { currentUser, loginWithGoogle, logout } = useAuth();

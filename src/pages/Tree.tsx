@@ -1,8 +1,8 @@
 import React from 'react';
-import { usePersons } from '../hooks/usePersons';
-import { Card } from '../components/ui/Card';
+import { usePersons } from '@/hooks/usePersons';
+import { Card } from '@/components/ui/Card';
 import { Link } from 'react-router-dom';
-import { getInitials } from '../lib/utils';
+import { getInitials } from '@/lib/utils';
 import { FiPlus, FiUser } from 'react-icons/fi';
 
 export function Tree() {
@@ -49,7 +49,7 @@ export function Tree() {
                 <div>
                   <h3 className="font-display font-bold text-lg text-text-primary">{person.firstName} {person.lastName}</h3>
                   <p className="text-sm text-text-secondary mt-1 italic">
-                    {person.birthYear} {person.deathYear ? `— ${person.deathYear}` : '— Present'}
+                    {person.birthDate ? new Date(person.birthDate).getFullYear() : 'Unknown'} {person.deathDate ? `— ${new Date(person.deathDate).getFullYear()}` : '— Present'}
                   </p>
                 </div>
               </Card>

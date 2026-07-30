@@ -1,26 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../services/firebase';
-import { COLLECTIONS } from '../lib/constants';
-import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { getInitials } from '../lib/utils';
+import { db } from '@/services/firebase';
+import { COLLECTIONS } from '@/lib/constants';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { getInitials } from '@/lib/utils';
 import { FiArrowLeft } from 'react-icons/fi';
+import { Person } from '@/types';
 
 export function PersonDetail() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [person, setPerson] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [person, setPerson] = useState<Person | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchPerson = async () => {
+      if (!id) return;
       try {
         const docRef = doc(db, COLLECTIONS.PERSONS, id);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setPerson({ id: docSnap.id, ...docSnap.data() });
+          setPerson({ id: docSnap.id, ...docSnap.data() } as Person);
         }
       } catch (error) {
         console.error("Error fetching person:", error);

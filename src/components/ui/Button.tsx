@@ -1,7 +1,12 @@
-import React from 'react';
-import { cn } from '../../lib/utils';
+import React, { ButtonHTMLAttributes } from 'react';
+import { cn } from '@/lib/utils';
 
-export function Button({ className, variant = 'primary', size = 'md', ...props }) {
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'accent' | 'outline' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+}
+
+export function Button({ className, variant = 'primary', size = 'md', ...props }: ButtonProps) {
   return (
     <button
       className={cn(

@@ -1,20 +1,21 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../services/firebase';
-import { COLLECTIONS, GENDER_OPTIONS } from '../lib/constants';
-import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { useFamily } from '../hooks/useFamily';
+import { db } from '@/services/firebase';
+import { COLLECTIONS, GENDER_OPTIONS } from '@/lib/constants';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { useFamily } from '@/hooks/useFamily';
+import { Gender } from '@/types';
 
 export function AddPerson() {
   const navigate = useNavigate();
   const { activeFamilyId } = useFamily();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
-    gender: 'unknown',
+    gender: 'unknown' as Gender,
     birthDate: '',
     birthPlace: '',
     isLiving: true,
@@ -23,13 +24,14 @@ export function AddPerson() {
     notes: '',
   });
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     // Handle both checkbox and text inputs appropriately
-    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
-    setFormData(prev => ({ ...prev, [e.target.name]: value }));
+    const target = e.target as HTMLInputElement;
+    const value = target.type === 'checkbox' ? target.checked : target.value;
+    setFormData(prev => ({ ...prev, [target.name]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     
