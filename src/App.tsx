@@ -23,6 +23,7 @@ export function App() {
         <Route index element={<Home />} />
         <Route path="tree" element={<PrivateRoute><Tree /></PrivateRoute>} />
         <Route path="person/add" element={<PrivateRoute><AddPerson /></PrivateRoute>} />
+        <Route path="person/edit/:id" element={<PrivateRoute><AddPerson /></PrivateRoute>} />
         <Route path="person/:id" element={<PrivateRoute><PersonDetail /></PrivateRoute>} />
         <Route path="photos" element={<PrivateRoute><Photos /></PrivateRoute>} />
       </Route>

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { collection, addDoc, updateDoc, doc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { COLLECTIONS, GENDER_OPTIONS } from '@/lib/constants';
 import { Card } from '@/components/ui/Card';
@@ -11,6 +11,8 @@ import { Gender } from '@/types';
 
 export function AddPerson() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const isEditing = Boolean(id);
   const { activeFamilyId } = useFamily();
   const { persons } = usePersons();
   const [loading, setLoading] = useState<boolean>(false);
@@ -29,6 +31,37 @@ export function AddPerson() {
     spouseId: '',
   });
 
+  useEffect(() => {
+    if (isEditing && id) {
+      const fetchPerson = async () => {
+        try {
+          const docRef = doc(db, COLLECTIONS.PERSONS, id);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setFormData({
+              firstName: data.firstName || '',
+              lastName: data.lastName || '',
+              gender: data.gender || 'unknown',
+              birthDate: data.birthDate || '',
+              birthPlace: data.birthPlace || '',
+              isLiving: data.isLiving ?? true,
+              deathDate: data.deathDate || '',
+              deathPlace: data.deathPlace || '',
+              notes: data.notes || '',
+              parentId1: data.parentId1 || '',
+              parentId2: data.parentId2 || '',
+              spouseId: data.spouseId || '',
+            });
+          }
+        } catch (err) {
+          console.error('Error fetching person for edit:', err);
+        }
+      };
+      fetchPerson();
+    }
+  }, [id, isEditing]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     // Handle both checkbox and text inputs appropriately
     const target = e.target as HTMLInputElement;
@@ -38,20 +71,43 @@ export function AddPerson() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    // Check for duplicates (same firstName, lastName case-insensitive, and birthDate)
+    const duplicate = persons.find(p => 
+      (!isEditing || p.id !== id) &&
+      p.firstName.trim().toLowerCase() === formData.firstName.trim().toLowerCase() &&
+      p.lastName.trim().toLowerCase() === formData.lastName.trim().toLowerCase() &&
+      p.birthDate && formData.birthDate &&
+      p.birthDate === formData.birthDate
+    );
+
+    if (duplicate) {
+      const confirmed = window.confirm("Une personne portant ce nom et cette date de naissance existe déjà dans l'arbre. Voulez-vous vraiment continuer ?");
+      if (!confirmed) return;
+    }
+
     setLoading(true);
     
     try {
-      // Save new person to Firestore collection
-      await addDoc(collection(db, COLLECTIONS.PERSONS), {
-        ...formData,
-        familyId: activeFamilyId || 'default_family', // Using a default if not set for demo
-        createdAt: serverTimestamp(),
-      });
+      if (isEditing && id) {
+        const docRef = doc(db, COLLECTIONS.PERSONS, id);
+        await updateDoc(docRef, {
+          ...formData,
+          updatedAt: serverTimestamp(),
+        });
+      } else {
+        // Save new person to Firestore collection
+        await addDoc(collection(db, COLLECTIONS.PERSONS), {
+          ...formData,
+          familyId: activeFamilyId || 'default_family', // Using a default if not set for demo
+          createdAt: serverTimestamp(),
+        });
+      }
       // Navigate back to the tree view after successful save
       navigate('/tree');
     } catch (error) {
-      console.error('Error adding person:', error);
-      alert('Failed to add person. See console for details.');
+      console.error('Error saving person:', error);
+      alert('Failed to save person. See console for details.');
     } finally {
       setLoading(false);
     }
@@ -60,8 +116,12 @@ export function AddPerson() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <h1 className="text-3xl font-display font-semibold text-text-primary">Add New Person</h1>
-        <p className="text-text-secondary mt-1">Enter details to add a new relative to your family tree.</p>
+        <h1 className="text-3xl font-display font-semibold text-text-primary">
+          {isEditing ? 'Edit Person' : 'Add New Person'}
+        </h1>
+        <p className="text-text-secondary mt-1">
+          {isEditing ? 'Update relative details in your family tree.' : 'Enter details to add a new relative to your family tree.'}
+        </p>
       </div>
 
       <Card>

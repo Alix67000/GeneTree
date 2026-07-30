@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { COLLECTIONS } from '@/lib/constants';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { getInitials } from '@/lib/utils';
-import { FiArrowLeft, FiUser, FiHeart, FiUsers } from 'react-icons/fi';
+import { FiArrowLeft, FiUser, FiHeart, FiUsers, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { Person } from '@/types';
 import { usePersons } from '@/hooks/usePersons';
 
@@ -35,6 +35,20 @@ export function PersonDetail() {
     fetchPerson();
   }, [id]);
 
+  const handleDelete = async () => {
+    if (!id) return;
+    const confirmed = window.confirm("Êtes-vous sûr de vouloir supprimer cette personne ?");
+    if (!confirmed) return;
+
+    try {
+      await deleteDoc(doc(db, COLLECTIONS.PERSONS, id));
+      navigate('/tree');
+    } catch (error) {
+      console.error('Error deleting person:', error);
+      alert('Failed to delete person.');
+    }
+  };
+
   if (loading) return <div className="flex justify-center p-12"><div className="animate-pulse w-8 h-8 rounded-full bg-primary/20"></div></div>;
   if (!person) return <div className="text-center p-12"><p className="text-xl text-text-secondary">Person not found.</p></div>;
 
@@ -45,9 +59,21 @@ export function PersonDetail() {
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
-      <Button variant="ghost" className="pl-0 text-text-secondary hover:text-primary" onClick={() => navigate(-1)}>
-        <FiArrowLeft className="mr-2" /> Back
-      </Button>
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" className="pl-0 text-text-secondary hover:text-primary" onClick={() => navigate(-1)}>
+          <FiArrowLeft className="mr-2" /> Back
+        </Button>
+        <div className="flex items-center gap-2">
+          <Link to={`/person/edit/${id}`}>
+            <Button variant="outline" size="sm" className="inline-flex items-center gap-1.5 text-xs">
+              <FiEdit2 className="w-3.5 h-3.5" /> Modifier
+            </Button>
+          </Link>
+          <Button variant="outline" size="sm" onClick={handleDelete} className="inline-flex items-center gap-1.5 text-xs text-error border-error/30 hover:bg-error/10">
+            <FiTrash2 className="w-3.5 h-3.5" /> Supprimer
+          </Button>
+        </div>
+      </div>
       
       <Card className="flex flex-col md:flex-row items-center md:items-start gap-8 p-8 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-[100px] -z-10"></div>
