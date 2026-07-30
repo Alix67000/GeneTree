@@ -6,7 +6,7 @@ import { db, storage } from '@/services/firebase';
 import { COLLECTIONS } from '@/lib/constants';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { getInitials } from '@/lib/utils';
+import { getInitials, formatPersonAge } from '@/lib/utils';
 import { FiArrowLeft, FiUser, FiHeart, FiUsers, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { Person } from '@/types';
 import { usePersons } from '@/hooks/usePersons';
@@ -100,7 +100,7 @@ export function PersonDetail() {
           <div>
             <h1 className="text-4xl font-display font-semibold text-text-primary">{person.firstName} {person.lastName}</h1>
             <p className="text-sm text-text-secondary mt-2 italic">
-              {person.birthDate ? new Date(person.birthDate).getFullYear() : 'Unknown'} — {person.deathDate ? new Date(person.deathDate).getFullYear() : (person.isLiving ? 'Present' : 'Unknown')}
+              {formatPersonAge(person.birthDate, person.deathDate, person.isLiving)}
             </p>
             <div className="flex gap-2 mt-4 justify-center md:justify-start">
               <span className="px-2 py-1 bg-primary-light/10 text-primary text-[10px] font-bold rounded-full uppercase">{person.gender}</span>

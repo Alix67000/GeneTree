@@ -25,3 +25,41 @@ export function getInitials(firstName?: string, lastName?: string) {
 export function generateId() {
   return Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
 }
+
+export function formatPersonAge(birthDate?: string, deathDate?: string, isLiving = true): string {
+  if (!birthDate) return '—';
+  
+  const birth = new Date(birthDate);
+  const birthYear = birth.getFullYear();
+
+  if (isNaN(birthYear)) return '—';
+
+  if (isLiving) {
+    const today = new Date();
+    let age = today.getFullYear() - birthYear;
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    
+    // If we only have the year, it could be less exact, but let's just stick to the calculation
+    if (birthDate.length === 4) {
+      return `Né(e) en ${birthYear} (~${age} ans)`;
+    }
+    return `${age} ans (né(e) en ${birthYear})`;
+  } else {
+    if (deathDate) {
+      const death = new Date(deathDate);
+      const deathYear = death.getFullYear();
+      if (!isNaN(deathYear)) {
+        let age = deathYear - birthYear;
+        const m = death.getMonth() - birth.getMonth();
+        if (m < 0 || (m === 0 && death.getDate() < birth.getDate())) {
+          age--;
+        }
+        return `${birthYear} – ${deathYear} (${age} ans)`;
+      }
+    }
+    return `Né(e) en ${birthYear} (Décédé(e))`;
+  }
+}

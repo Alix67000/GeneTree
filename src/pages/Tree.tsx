@@ -3,7 +3,7 @@ import { usePersons } from '@/hooks/usePersons';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Link } from 'react-router-dom';
-import { getInitials } from '@/lib/utils';
+import { getInitials, formatPersonAge } from '@/lib/utils';
 import { 
   FiPlus, FiMinus, FiRefreshCcw, FiUser, FiGrid, FiGitCommit, 
   FiHeart, FiEye, FiArrowUp, FiArrowDown
@@ -27,91 +27,162 @@ export function Tree() {
   const initialCenterDone = useRef(false);
 
   // Layout Engine
-  const { xPos, levels } = useMemo(() => {
-    const levelsMap = new Map<string, number>();
-    
-    // Ensure everyone gets a level, handle cycles safely
-    const getLevel = (id: string, visited = new Set<string>()): number => {
-      if (levelsMap.has(id)) return levelsMap.get(id)!;
-      if (visited.has(id)) return 0;
-      visited.add(id);
-      const p = persons.find(per => per.id === id);
-      if (!p) return 0;
-      
-      let level = 0;
-      if (p.parentId1 || p.parentId2) {
-        const l1 = p.parentId1 ? getLevel(p.parentId1, new Set(visited)) : 0;
-        const l2 = p.parentId2 ? getLevel(p.parentId2, new Set(visited)) : 0;
-        level = Math.max(l1, l2) + 1;
-      }
-      levelsMap.set(id, level);
-      
-      if (p.spouseId && !levelsMap.has(p.spouseId)) {
-        levelsMap.set(p.spouseId, level);
-      }
-      return level;
+  const { xPos, levels, layoutNodes } = useMemo(() => {
+    type TreeNode = {
+      id: string;
+      isCouple: boolean;
+      person1: string;
+      person2?: string;
+      children: string[];
+      gen: number;
+      x: number;
+      width: number;
     };
+
+    const genMap = new Map<string, number>();
+    persons.forEach(p => genMap.set(p.id, 0));
     
-    persons.forEach(p => getLevel(p.id));
-    
-    const levelGroups = new Map<number, string[]>();
+    let changed = true;
+    let iter = 0;
+    while(changed && iter < 100) {
+       changed = false;
+       iter++;
+       persons.forEach(p => {
+          let currentGen = genMap.get(p.id)!;
+          let newGen = currentGen;
+          
+          if (p.parentId1 || p.parentId2) {
+             const g1 = p.parentId1 ? genMap.get(p.parentId1)! : -999;
+             const g2 = p.parentId2 ? genMap.get(p.parentId2)! : -999;
+             const parentGen = Math.max(g1, g2);
+             if (parentGen + 1 > newGen) {
+                 newGen = parentGen + 1;
+             }
+          }
+          if (p.spouseId) {
+             const spouseGen = genMap.get(p.spouseId)!;
+             if (spouseGen > newGen) {
+                 newGen = spouseGen;
+             }
+          }
+          
+          if (newGen !== currentGen) {
+             genMap.set(p.id, newGen);
+             changed = true;
+          }
+       });
+    }
+
+    const coupleMap = new Map<string, string>();
     persons.forEach(p => {
-      const l = levelsMap.get(p.id) || 0;
-      if (!levelGroups.has(l)) levelGroups.set(l, []);
-      levelGroups.get(l)!.push(p.id);
-    });
-    
-    const xPosMap = new Map<string, number>();
-    const CARD_X_SPACING = 350;
-    
-    Array.from(levelGroups.keys()).sort((a,b)=>a-b).forEach(l => {
-      const group = levelGroups.get(l)!;
-      
-      const sortedGroup: string[] = [];
-      const added = new Set<string>();
-      group.forEach(id => {
-        if (added.has(id)) return;
-        sortedGroup.push(id);
-        added.add(id);
-        const p = persons.find(per=>per.id === id);
-        if (p?.spouseId && group.includes(p.spouseId) && !added.has(p.spouseId)) {
-          sortedGroup.push(p.spouseId);
-          added.add(p.spouseId);
-        }
-      });
-      
-      sortedGroup.forEach((id, index) => {
-        const p = persons.find(per => per.id === id);
-        let idealX = index * CARD_X_SPACING;
-        
-        if (p?.parentId1 || p?.parentId2) {
-          const p1x = p.parentId1 && xPosMap.has(p.parentId1) ? xPosMap.get(p.parentId1)! : null;
-          const p2x = p.parentId2 && xPosMap.has(p.parentId2) ? xPosMap.get(p.parentId2)! : null;
-          if (p1x !== null && p2x !== null) idealX = (p1x + p2x) / 2;
-          else if (p1x !== null) idealX = p1x;
-          else if (p2x !== null) idealX = p2x;
-        }
-        xPosMap.set(id, idealX);
-      });
-      
-      const sortedByX = sortedGroup.sort((a,b) => (xPosMap.get(a) || 0) - (xPosMap.get(b) || 0));
-      for (let i = 1; i < sortedByX.length; i++) {
-        const prev = sortedByX[i-1];
-        const curr = sortedByX[i];
-        const prevX = xPosMap.get(prev)!;
-        const currX = xPosMap.get(curr)!;
-        
-        const pCurr = persons.find(per=>per.id === curr);
-        const isSpouse = pCurr?.spouseId === prev;
-        const minSpacing = isSpouse ? 280 : CARD_X_SPACING;
-        
-        if (currX - prevX < minSpacing) {
-          xPosMap.set(curr, prevX + minSpacing);
-        }
+      if (p.spouseId) {
+         const coupleId = [p.id, p.spouseId].sort().join('-');
+         coupleMap.set(p.id, coupleId);
       }
     });
+
+    const nodes = new Map<string, TreeNode>();
+    persons.forEach(p => {
+       const gen = genMap.get(p.id)!;
+       if (coupleMap.has(p.id)) {
+          const coupleId = coupleMap.get(p.id)!;
+          if (!nodes.has(coupleId)) {
+             const [p1, p2] = coupleId.split('-');
+             nodes.set(coupleId, { id: coupleId, isCouple: true, person1: p1, person2: p2, children: [], gen, x: 0, width: 256 + 40 + 256 });
+          }
+       } else {
+          nodes.set(p.id, { id: p.id, isCouple: false, person1: p.id, children: [], gen, x: 0, width: 256 });
+       }
+    });
+
+    persons.forEach(p => {
+       if (p.parentId1 || p.parentId2) {
+          let parentNodeId: string | null = null;
+          if (p.parentId1 && p.parentId2) {
+             const cId = [p.parentId1, p.parentId2].sort().join('-');
+             if (nodes.has(cId)) parentNodeId = cId;
+          }
+          if (!parentNodeId && p.parentId1) {
+             parentNodeId = coupleMap.get(p.parentId1) || p.parentId1;
+          }
+          if (!parentNodeId && p.parentId2) {
+             parentNodeId = coupleMap.get(p.parentId2) || p.parentId2;
+          }
+          
+          if (parentNodeId) {
+             const childNodeId = coupleMap.get(p.id) || p.id;
+             const parentNode = nodes.get(parentNodeId);
+             if (parentNode && !parentNode.children.includes(childNodeId)) {
+                parentNode.children.push(childNodeId);
+             }
+          }
+       }
+    });
+
+    const getBirthDate = (nodeId: string) => {
+       const node = nodes.get(nodeId)!;
+       const p = persons.find(per => per.id === node.person1);
+       return p?.birthDate ? new Date(p.birthDate).getTime() : 0;
+    };
+    nodes.forEach(node => {
+       node.children.sort((a, b) => getBirthDate(a) - getBirthDate(b));
+    });
+
+    const genNodes = new Map<number, TreeNode[]>();
+    nodes.forEach(n => {
+       if (!genNodes.has(n.gen)) genNodes.set(n.gen, []);
+       genNodes.get(n.gen)!.push(n);
+    });
     
-    return { xPos: xPosMap, levels: levelsMap };
+    const NODE_SPACING = 80;
+    Array.from(genNodes.keys()).sort((a,b)=>a-b).forEach(gen => {
+       let currentX = 0;
+       genNodes.get(gen)!.forEach(n => {
+          n.x = currentX + n.width / 2;
+          currentX += n.width + NODE_SPACING;
+       });
+    });
+
+    for (let iter = 0; iter < 100; iter++) {
+       nodes.forEach(n => {
+          if (n.children.length > 0) {
+             const childrenX = n.children.map(cid => nodes.get(cid)!.x);
+             const avgX = childrenX.reduce((a,b)=>a+b,0) / childrenX.length;
+             n.x = (n.x + avgX) / 2;
+          }
+       });
+       nodes.forEach(n => {
+          const parentNode = Array.from(nodes.values()).find(p => p.children.includes(n.id));
+          if (parentNode) {
+             n.x = (n.x + parentNode.x) / 2;
+          }
+       });
+       
+       Array.from(genNodes.keys()).forEach(gen => {
+          const gNodes = genNodes.get(gen)!;
+          gNodes.sort((a, b) => a.x - b.x);
+          for (let i = 1; i < gNodes.length; i++) {
+             const prev = gNodes[i-1];
+             const curr = gNodes[i];
+             const minX = prev.x + prev.width/2 + NODE_SPACING + curr.width/2;
+             if (curr.x < minX) {
+                curr.x = minX;
+             }
+          }
+       });
+    }
+
+    const xPosMap = new Map<string, number>();
+    nodes.forEach(n => {
+       if (n.isCouple && n.person2) {
+          xPosMap.set(n.person1, n.x - 148);
+          xPosMap.set(n.person2, n.x + 148);
+       } else {
+          xPosMap.set(n.person1, n.x);
+       }
+    });
+
+    return { xPos: xPosMap, levels: genMap, layoutNodes: Array.from(nodes.values()) };
   }, [persons]);
 
   // Set default central person when persons load
@@ -296,7 +367,7 @@ export function Tree() {
           <div>
             <h3 className="font-display font-bold text-base text-text-primary leading-tight">{p.firstName} {p.lastName}</h3>
             <p className="text-[11px] text-text-secondary mt-1 italic">
-              {p.birthDate ? new Date(p.birthDate).getFullYear() : 'Unknown'} {p.deathDate ? `— ${new Date(p.deathDate).getFullYear()}` : '— Present'}
+              {formatPersonAge(p.birthDate, p.deathDate, p.isLiving)}
             </p>
           </div>
 
@@ -388,7 +459,7 @@ export function Tree() {
               <div>
                 <h3 className="font-display font-bold text-lg text-text-primary">{person.firstName} {person.lastName}</h3>
                 <p className="text-sm text-text-secondary mt-1 italic">
-                  {person.birthDate ? new Date(person.birthDate).getFullYear() : 'Unknown'} {person.deathDate ? `— ${new Date(person.deathDate).getFullYear()}` : '— Present'}
+                  {formatPersonAge(person.birthDate, person.deathDate, person.isLiving)}
                 </p>
               </div>
               <div className="flex gap-2 w-full pt-2">
@@ -456,58 +527,112 @@ export function Tree() {
                     <path d="M 0 0 L 10 5 L 0 10 z" className="fill-slate-300" />
                   </marker>
                 </defs>
-                {persons.map(p => {
-                  const paths = [];
-                  const childX = xPos.get(p.id) || 0;
-                  const childY = (levels.get(p.id) || 0) * 350;
-                  const offset = 120; // Half of card height + padding
+                {layoutNodes.map(node => {
+                const paths = [];
+                if (node.children.length > 0) {
+                  const parentX = node.x;
+                  const parentY = node.gen * 350;
+                  const offset = 120; // drop down from center
+                  const startY = parentY + offset;
+                  const midY = startY + 60; // horizontal line Y
                   
-                  if (p.parentId1) {
-                    const p1X = xPos.get(p.parentId1) || 0;
-                    const p1Y = (levels.get(p.parentId1) || 0) * 350;
-                    const isActive = focusedPersonId ? (p.id === focusedPersonId || p.parentId1 === focusedPersonId) : false;
-                    paths.push(
-                      <path 
-                        key={`${p.id}-p1`}
-                        d={`M ${p1X} ${p1Y + offset} C ${p1X} ${p1Y + offset + 80}, ${childX} ${childY - offset - 80}, ${childX} ${childY - offset}`}
-                        markerEnd={`url(#arrow-${isActive ? 'active' : 'inactive'})`}
-                        className={`fill-none stroke-2 transition-all duration-300 ${isActive ? 'stroke-primary animate-flow' : 'stroke-slate-300/60'}`}
-                      />
-                    );
-                  }
-                  if (p.parentId2) {
-                    const p2X = xPos.get(p.parentId2) || 0;
-                    const p2Y = (levels.get(p.parentId2) || 0) * 350;
-                    const isActive = focusedPersonId ? (p.id === focusedPersonId || p.parentId2 === focusedPersonId) : false;
-                    paths.push(
-                      <path 
-                        key={`${p.id}-p2`}
-                        d={`M ${p2X} ${p2Y + offset} C ${p2X} ${p2Y + offset + 80}, ${childX} ${childY - offset - 80}, ${childX} ${childY - offset}`}
-                        markerEnd={`url(#arrow-${isActive ? 'active' : 'inactive'})`}
-                        className={`fill-none stroke-2 transition-all duration-300 ${isActive ? 'stroke-primary animate-flow' : 'stroke-slate-300/60'}`}
-                      />
-                    );
+                  const isActive = focusedPersonId ? (
+                    node.person1 === focusedPersonId || 
+                    node.person2 === focusedPersonId || 
+                    node.children.some(cid => {
+                       const c = layoutNodes.find(n => n.id === cid);
+                       return c && (c.person1 === focusedPersonId || c.person2 === focusedPersonId);
+                    })
+                  ) : false;
+
+                  paths.push(
+                    <path
+                      key={`${node.id}-trunk`}
+                      d={`M ${parentX} ${startY} L ${parentX} ${midY}`}
+                      className={`fill-none stroke-2 transition-all duration-300 ${isActive ? 'stroke-primary animate-flow' : 'stroke-slate-300/60'}`}
+                    />
+                  );
+
+                  const childTargets = node.children.map(cid => {
+                    const childNode = layoutNodes.find(n => n.id === cid);
+                    let targetX = childNode ? childNode.x : 0;
+                    if (childNode && childNode.isCouple) {
+                       const p1 = persons.find(p => p.id === childNode.person1);
+                       const p2 = persons.find(p => p.id === childNode.person2);
+                       const isP1Child = p1?.parentId1 === node.person1 || p1?.parentId1 === node.person2 || p1?.parentId2 === node.person1 || p1?.parentId2 === node.person2;
+                       const isP2Child = p2?.parentId1 === node.person1 || p2?.parentId1 === node.person2 || p2?.parentId2 === node.person1 || p2?.parentId2 === node.person2;
+                       
+                       if (isP1Child && !isP2Child) {
+                           targetX = xPos.get(childNode.person1) || 0;
+                       } else if (isP2Child && !isP1Child) {
+                           targetX = childNode.person2 ? (xPos.get(childNode.person2) || 0) : 0;
+                       }
+                    }
+                    return { cid, childNode, targetX };
+                  });
+                  
+                  if (childTargets.length > 1) {
+                     const sortedTargets = [...childTargets].sort((a, b) => a.targetX - b.targetX);
+                     const minX = Math.min(sortedTargets[0].targetX, parentX);
+                     const maxX = Math.max(sortedTargets[sortedTargets.length - 1].targetX, parentX);
+                     
+                     paths.push(
+                       <path
+                          key={`${node.id}-horiz`}
+                          d={`M ${minX} ${midY} L ${maxX} ${midY}`}
+                          className={`fill-none stroke-2 transition-all duration-300 ${isActive ? 'stroke-primary animate-flow' : 'stroke-slate-300/60'}`}
+                       />
+                     );
+                  } else if (childTargets.length === 1) {
+                     const tX = childTargets[0].targetX;
+                     if (tX !== parentX) {
+                       paths.push(
+                         <path
+                            key={`${node.id}-horiz`}
+                            d={`M ${parentX} ${midY} L ${tX} ${midY}`}
+                            className={`fill-none stroke-2 transition-all duration-300 ${isActive ? 'stroke-primary animate-flow' : 'stroke-slate-300/60'}`}
+                         />
+                       );
+                     }
                   }
                   
-                  if (p.spouseId && p.id < p.spouseId) {
-                    const sX = xPos.get(p.spouseId) || 0;
-                    const sY = (levels.get(p.spouseId) || 0) * 350;
-                    const isActive = focusedPersonId ? (p.id === focusedPersonId || p.spouseId === focusedPersonId) : false;
-                    paths.push(
-                      <g key={`${p.id}-spouse`}>
-                        <path 
-                          d={`M ${childX + 130} ${childY} L ${sX - 130} ${sY}`}
-                          className={`fill-none stroke-2 transition-all duration-300 ${isActive ? 'stroke-rose-400 animate-flow' : 'stroke-rose-200 stroke-dasharray-[4_4]'}`}
-                        />
-                        <rect x={(childX + sX)/2 - 12} y={childY - 12} width="24" height="24" rx="12" fill="#fff" className="stroke-rose-200 stroke-1" />
-                        <text x={(childX + sX)/2} y={childY + 4} textAnchor="middle" fontSize="12" fill="#f43f5e">♥</text>
-                      </g>
-                    )
-                  }
-                  return paths;
-                })}
+                  childTargets.forEach(({ cid, childNode, targetX }) => {
+                     if (!childNode) return;
+                     const childY = childNode.gen * 350;
+                     const childActive = isActive || (focusedPersonId && (childNode.person1 === focusedPersonId || childNode.person2 === focusedPersonId));
+
+                     paths.push(
+                       <path
+                          key={`${node.id}-to-${cid}`}
+                          d={`M ${targetX} ${midY} L ${targetX} ${childY - offset}`}
+                          markerEnd={`url(#arrow-${childActive ? 'active' : 'inactive'})`}
+                          className={`fill-none stroke-2 transition-all duration-300 ${childActive ? 'stroke-primary animate-flow' : 'stroke-slate-300/60'}`}
+                       />
+                     );
+                  });
+                }
+                
+                if (node.isCouple && node.person2) {
+                  const p1X = xPos.get(node.person1) || 0;
+                  const p2X = xPos.get(node.person2) || 0;
+                  const y = node.gen * 350;
+                  
+                  const isCoupleActive = focusedPersonId ? (node.person1 === focusedPersonId || node.person2 === focusedPersonId) : false;
+                  
+                  paths.push(
+                    <g key={`${node.id}-couple`}>
+                      <path 
+                        d={`M ${Math.min(p1X, p2X) + 130} ${y} L ${Math.max(p1X, p2X) - 130} ${y}`}
+                        className={`fill-none stroke-2 transition-all duration-300 ${isCoupleActive ? 'stroke-rose-400 animate-flow' : 'stroke-rose-200 stroke-dasharray-[4_4]'}`}
+                      />
+                      <rect x={node.x - 12} y={y - 12} width="24" height="24" rx="12" fill="#fff" className="stroke-rose-200 stroke-1" />
+                      <text x={node.x} y={y + 4} textAnchor="middle" fontSize="12" fill="#f43f5e">♥</text>
+                    </g>
+                  );
+                }
+                return paths;
+              })}
               </svg>
-              
               {persons.map(p => {
                 const x = xPos.get(p.id) || 0;
                 const y = (levels.get(p.id) || 0) * 350;
@@ -530,12 +655,22 @@ export function Tree() {
                   badgeStyle = 'bg-emerald-50 text-emerald-700 border-emerald-200';
                 }
 
+                let isCardActive = true;
+                if (focusedPersonId) {
+                  const fp = persons.find(person => person.id === focusedPersonId);
+                  isCardActive = p.id === focusedPersonId || 
+                                 p.id === fp?.parentId1 || p.id === fp?.parentId2 ||
+                                 p.id === fp?.spouseId ||
+                                 p.parentId1 === focusedPersonId || p.parentId2 === focusedPersonId;
+                }
+
                 return (
                   <div 
                     key={p.id}
-                    className="absolute person-card"
-                    style={{ left: x, top: y, transform: 'translate(-50%, -50%)' }}
+                    className={`absolute person-card transition-all duration-300 ${!isCardActive ? 'opacity-30 grayscale pointer-events-none' : 'opacity-100'}`}
+                    style={{ left: x, top: y, transform: 'translate(-50%, -50%)', zIndex: isCardActive ? 10 : 1 }}
                     onMouseDown={(e) => e.stopPropagation()} 
+                    onClick={() => setFocusedPersonId(p.id)}
                   >
                     {renderPersonCard(p, role, badgeStyle, isCentral)}
                   </div>
