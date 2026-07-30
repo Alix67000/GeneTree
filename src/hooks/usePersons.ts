@@ -30,7 +30,10 @@ export function usePersons() {
       setPersons(personsData);
       setLoading(false);
     }, (error) => {
-      console.error('Error fetching persons:', error);
+      console.error('Firestore Error fetching persons (Check if Firestore database is created and rules are configured):', error);
+      if (error.code === 'not-found' || error.message?.includes('Database')) {
+        console.error('Database not found or misconfigured. Ensure Firestore is enabled in your Firebase console.');
+      }
       setLoading(false);
     });
 

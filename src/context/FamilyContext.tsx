@@ -8,10 +8,13 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
   const { currentUser } = useAuth();
   const [activeFamilyId, setActiveFamilyId] = useState<string | null>(null);
 
-  // Here you would typically fetch families for the user
   useEffect(() => {
     if (currentUser) {
-      // Default to some logic
+      if (!activeFamilyId) {
+        setActiveFamilyId('default_family');
+      }
+    } else {
+      setActiveFamilyId(null);
     }
   }, [currentUser]);
 

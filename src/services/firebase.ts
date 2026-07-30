@@ -16,8 +16,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 // Initialize Firebase Auth
 const auth = getAuth(app);
-// Initialize Cloud Firestore
-const db = getFirestore(app);
+// Initialize Cloud Firestore with optional custom database ID if provided
+const databaseId = import.meta.env.VITE_FIREBASE_DATABASE_ID;
+const db = databaseId ? getFirestore(app, databaseId) : getFirestore(app);
 // Initialize Cloud Storage
 const storage = getStorage(app);
 
