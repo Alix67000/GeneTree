@@ -6,8 +6,7 @@ import { Link } from 'react-router-dom';
 import { getInitials } from '@/lib/utils';
 import { 
   FiPlus, FiMinus, FiRefreshCcw, FiUser, FiGrid, FiGitCommit, 
-  FiHeart, FiEye, FiArrowUp, FiArrowDown, FiSearch, 
-  FiChevronUp, FiChevronDown, FiUsers 
+  FiHeart, FiEye, FiArrowUp, FiArrowDown
 } from 'react-icons/fi';
 import { Person } from '@/types';
 
@@ -18,9 +17,6 @@ export function Tree() {
   const [focusedPersonId, setFocusedPersonId] = useState<string | null>(null);
   const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
   
-  // Global family view panel state
-  const [isGlobalPanelOpen, setIsGlobalPanelOpen] = useState<boolean>(true);
-  const [globalSearchQuery, setGlobalSearchQuery] = useState<string>('');
   const [highlightedPersonId, setHighlightedPersonId] = useState<string | null>(null);
 
   // Canvas Pan & Zoom State
@@ -141,13 +137,43 @@ export function Tree() {
   };
 
   useEffect(() => {
-    if (!initialCenterDone.current && centralPersonId && xPos.has(centralPersonId) && containerRef.current) {
-      const x = xPos.get(centralPersonId) || 0;
-      const y = (levels.get(centralPersonId) || 0) * 350;
-      centerOnPoint(x, y, 1);
+    if (!initialCenterDone.current && persons.length > 0 && xPos.size > 0 && containerRef.current) {
+      let minX = Infinity;
+      let maxX = -Infinity;
+      let minY = Infinity;
+      let maxY = -Infinity;
+      
+      persons.forEach(p => {
+        const x = xPos.get(p.id) || 0;
+        const y = (levels.get(p.id) || 0) * 350;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      });
+      
+      const width = maxX - minX + 300; // card width + padding
+      const height = maxY - minY + 250; // card height + padding
+      
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const scaleX = (containerRect.width - 40) / width;
+      const scaleY = (containerRect.height - 40) / height;
+      
+      let scale = Math.min(scaleX, scaleY);
+      scale = Math.max(0.3, Math.min(scale, 1.2)); // clamp
+      
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+      
+      setTransform({
+        x: containerRect.width / 2 - centerX * scale,
+        y: containerRect.height / 2 - centerY * scale,
+        scale: scale
+      });
+      
       initialCenterDone.current = true;
     }
-  }, [centralPersonId, persons, xPos, levels]);
+  }, [persons, xPos, levels]);
 
   const handleSelectCentral = (id: string) => {
     setCentralPersonId(id);
@@ -161,6 +187,35 @@ export function Tree() {
   };
 
   // Pan and Zoom Handlers
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        const zoomFactor = -e.deltaY * 0.002;
+        setTransform(prev => {
+          const newScale = Math.min(Math.max(0.3, prev.scale + zoomFactor * prev.scale), 2.5);
+          const rect = container.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const mouseY = e.clientY - rect.top;
+          
+          const targetX = (mouseX - prev.x) / prev.scale;
+          const targetY = (mouseY - prev.y) / prev.scale;
+          
+          const newX = mouseX - targetX * newScale;
+          const newY = mouseY - targetY * newScale;
+          
+          return { x: newX, y: newY, scale: newScale };
+        });
+      }
+    };
+    
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => container.removeEventListener('wheel', handleWheel);
+  }, []);
+
   const handleZoom = (delta: number) => {
     setTransform(prev => {
       const newScale = Math.min(Math.max(0.2, prev.scale + delta), 2.5);
@@ -214,10 +269,6 @@ export function Tree() {
     return p.parentId1 === pId || p.parentId2 === pId || p.spouseId === pId || 
            persons.some(c => (c.parentId1 === focusedPersonId || c.parentId2 === focusedPersonId) && c.id === pId);
   };
-
-  const filteredGlobalPersons = persons.filter(p => 
-    `${p.firstName} ${p.lastName}`.toLowerCase().includes(globalSearchQuery.toLowerCase())
-  );
 
   const renderPersonCard = (p: Person, roleLabel: string, badgeStyle: string, isCentral = false) => {
     const isFocused = focusedPersonId ? isConnectedToFocused(p.id) : false;
@@ -276,7 +327,7 @@ export function Tree() {
   };
 
   return (
-    <div className="space-y-6 pb-32">
+    <div className="space-y-6 pb-6">
       {/* Header & Controls */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-border shadow-xs">
         <div>
@@ -505,8 +556,43 @@ export function Tree() {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => centerOnPoint(xPos.get(centralPersonId) || 0, (levels.get(centralPersonId) || 0) * 350, 1)} 
-                title="Réinitialiser (100%)" 
+                onClick={() => {
+                  let minX = Infinity;
+                  let maxX = -Infinity;
+                  let minY = Infinity;
+                  let maxY = -Infinity;
+                  
+                  persons.forEach(p => {
+                    const x = xPos.get(p.id) || 0;
+                    const y = (levels.get(p.id) || 0) * 350;
+                    if (x < minX) minX = x;
+                    if (x > maxX) maxX = x;
+                    if (y < minY) minY = y;
+                    if (y > maxY) maxY = y;
+                  });
+                  
+                  const width = maxX - minX + 300;
+                  const height = maxY - minY + 250;
+                  
+                  const containerRect = containerRef.current?.getBoundingClientRect();
+                  if (containerRect) {
+                    const scaleX = (containerRect.width - 40) / width;
+                    const scaleY = (containerRect.height - 40) / height;
+                    
+                    let scale = Math.min(scaleX, scaleY);
+                    scale = Math.max(0.3, Math.min(scale, 1.2));
+                    
+                    const centerX = (minX + maxX) / 2;
+                    const centerY = (minY + maxY) / 2;
+                    
+                    setTransform({
+                      x: containerRect.width / 2 - centerX * scale,
+                      y: containerRect.height / 2 - centerY * scale,
+                      scale: scale
+                    });
+                  }
+                }} 
+                title="Fit to Screen" 
                 className="h-10 w-10 p-0 text-text-secondary hover:text-primary hover:bg-primary/5 rounded-xl"
               >
                 <FiRefreshCcw size={18} />
@@ -515,76 +601,6 @@ export function Tree() {
           </div>
         </div>
       )}
-
-      {/* Vue globale de la famille (Drawer inférieur rétractable) */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-border shadow-2xl transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 cursor-pointer" onClick={() => setIsGlobalPanelOpen(!isGlobalPanelOpen)}>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                <FiUsers className="w-4 h-4" />
-              </div>
-              <div>
-                <h3 className="font-display font-semibold text-sm text-text-primary flex items-center gap-2">
-                  Vue globale de la famille 
-                  <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-bold">{persons.length} membres</span>
-                </h3>
-                <p className="text-xs text-text-secondary hidden sm:block">Cliquez sur un membre pour le centrer instantanément dans l'arbre</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 w-full md:w-auto">
-              <div className="relative flex-1 md:flex-initial" onClick={(e) => e.stopPropagation()}>
-                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary w-3.5 h-3.5" />
-                <input
-                  type="text"
-                  placeholder="Rechercher..."
-                  value={globalSearchQuery}
-                  onChange={(e) => setGlobalSearchQuery(e.target.value)}
-                  className="w-full md:w-64 pl-9 pr-4 py-1.5 rounded-full border border-border bg-background text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/50"
-                />
-              </div>
-              <Button variant="ghost" size="sm" className="p-1.5 h-8 w-8 shrink-0">
-                {isGlobalPanelOpen ? <FiChevronDown className="w-5 h-5" /> : <FiChevronUp className="w-5 h-5" />}
-              </Button>
-            </div>
-          </div>
-
-          {isGlobalPanelOpen && (
-            <div className="mt-3 pt-3 border-t border-border/60 max-h-[30vh] overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 pb-2">
-              {filteredGlobalPersons.map(p => {
-                const isCurrentCentral = p.id === centralPerson?.id;
-                return (
-                  <div
-                    key={p.id}
-                    onClick={() => { handleSelectCentral(p.id); setViewMode('tree'); }}
-                    className={`flex items-center gap-2.5 p-2 rounded-xl border transition-all cursor-pointer bg-background/60 hover:bg-white hover:shadow-sm ${isCurrentCentral ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'border-border'}`}
-                  >
-                    <div className="w-9 h-9 rounded-full border border-accent bg-border flex items-center justify-center text-xs font-display font-bold text-text-primary overflow-hidden shrink-0">
-                      {p.photoUrl ? (
-                        <img src={p.photoUrl} alt={`${p.firstName} ${p.lastName}`} className="w-full h-full object-cover" />
-                      ) : (
-                        getInitials(p.firstName, p.lastName)
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-text-primary truncate">{p.firstName} {p.lastName}</p>
-                      <p className="text-[10px] text-text-secondary truncate">
-                        {p.birthDate ? new Date(p.birthDate).getFullYear() : '—'}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-              {filteredGlobalPersons.length === 0 && (
-                <div className="col-span-full text-center py-4 text-xs text-text-secondary italic">
-                  Aucun membre ne correspond à votre recherche.
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
