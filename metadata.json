@@ -1,6 +1,6 @@
 {
-  "name": "",
-  "description": "",
+  "name": "Family Tree",
+  "description": "Interactive family tree builder and manager with hierarchical tree views, photo optimization, and genealogy tracking.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
