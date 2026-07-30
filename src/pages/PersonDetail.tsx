@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { doc, getDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '@/services/firebase';
+import { ref, deleteObject } from 'firebase/storage';
+import { db, storage } from '@/services/firebase';
 import { COLLECTIONS } from '@/lib/constants';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -36,11 +37,21 @@ export function PersonDetail() {
   }, [id]);
 
   const handleDelete = async () => {
-    if (!id) return;
+    if (!id || !person) return;
     const confirmed = window.confirm("Êtes-vous sûr de vouloir supprimer cette personne ?");
     if (!confirmed) return;
 
     try {
+      // Delete storage photo if exists
+      if (person.photoUrl) {
+        try {
+          const imageRef = ref(storage, person.photoUrl);
+          await deleteObject(imageRef);
+        } catch (storageErr) {
+          console.warn('Could not delete storage object or already deleted:', storageErr);
+        }
+      }
+
       await deleteDoc(doc(db, COLLECTIONS.PERSONS, id));
       navigate('/tree');
     } catch (error) {

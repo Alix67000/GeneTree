@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { collection, addDoc, updateDoc, doc, getDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/services/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '@/services/firebase';
 import { COLLECTIONS, GENDER_OPTIONS } from '@/lib/constants';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useFamily } from '@/hooks/useFamily';
 import { usePersons } from '@/hooks/usePersons';
 import { Gender } from '@/types';
+import { compressAndResizeImage } from '@/lib/imageOptimizer';
+import { FiUpload, FiImage } from 'react-icons/fi';
 
 export function AddPerson() {
   const navigate = useNavigate();
@@ -16,6 +19,8 @@ export function AddPerson() {
   const { activeFamilyId } = useFamily();
   const { persons } = usePersons();
   const [loading, setLoading] = useState<boolean>(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string>('');
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -29,6 +34,7 @@ export function AddPerson() {
     parentId1: '',
     parentId2: '',
     spouseId: '',
+    photoUrl: '',
   });
 
   useEffect(() => {
@@ -52,7 +58,11 @@ export function AddPerson() {
               parentId1: data.parentId1 || '',
               parentId2: data.parentId2 || '',
               spouseId: data.spouseId || '',
+              photoUrl: data.photoUrl || '',
             });
+            if (data.photoUrl) {
+              setPhotoPreview(data.photoUrl);
+            }
           }
         } catch (err) {
           console.error('Error fetching person for edit:', err);
@@ -67,6 +77,14 @@ export function AddPerson() {
     const target = e.target as HTMLInputElement;
     const value = target.type === 'checkbox' ? target.checked : target.value;
     setFormData(prev => ({ ...prev, [target.name]: value }));
+  };
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setPhotoFile(file);
+      setPhotoPreview(URL.createObjectURL(file));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -89,17 +107,29 @@ export function AddPerson() {
     setLoading(true);
     
     try {
+      let finalPhotoUrl = formData.photoUrl;
+
+      if (photoFile) {
+        // Compress and resize image to WebP
+        const compressedBlob = await compressAndResizeImage(photoFile, 600, 0.7);
+        const storageRef = ref(storage, `family_photos/${Date.now()}_${photoFile.name.replace(/\.[^/.]+$/, '')}.webp`);
+        const snapshot = await uploadBytes(storageRef, compressedBlob, { contentType: 'image/webp' });
+        finalPhotoUrl = await getDownloadURL(snapshot.ref);
+      }
+
+      const payload = {
+        ...formData,
+        photoUrl: finalPhotoUrl,
+        familyId: activeFamilyId || 'default_family',
+        updatedAt: serverTimestamp(),
+      };
+
       if (isEditing && id) {
         const docRef = doc(db, COLLECTIONS.PERSONS, id);
-        await updateDoc(docRef, {
-          ...formData,
-          updatedAt: serverTimestamp(),
-        });
+        await updateDoc(docRef, payload);
       } else {
-        // Save new person to Firestore collection
         await addDoc(collection(db, COLLECTIONS.PERSONS), {
-          ...formData,
-          familyId: activeFamilyId || 'default_family', // Using a default if not set for demo
+          ...payload,
           createdAt: serverTimestamp(),
         });
       }
@@ -148,6 +178,23 @@ export function AddPerson() {
                 onChange={handleChange}
                 className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-text-primary">Profile Photo</label>
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-full border-2 border-accent bg-border flex items-center justify-center overflow-hidden text-text-secondary">
+                {photoPreview ? (
+                  <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                ) : (
+                  <FiImage size={24} />
+                )}
+              </div>
+              <label className="flex-1 flex items-center justify-center gap-2 px-4 py-3 border border-dashed border-border rounded-[var(--radius-button)] cursor-pointer hover:border-primary/50 transition-colors bg-background/50 text-sm font-medium text-text-secondary hover:text-primary">
+                <FiUpload /> Choose Photo (Auto WebP compression)
+                <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
+              </label>
             </div>
           </div>
 
