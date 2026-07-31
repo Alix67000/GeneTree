@@ -90,7 +90,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     localStorage.removeItem('genetree_member_session');
     setCurrentUser(null);
-    return signOut(auth);
+    try {
+      await signOut(auth);
+    } catch (err) {
+      console.error('Erreur Firebase signOut:', err);
+    }
   };
 
   const value = {

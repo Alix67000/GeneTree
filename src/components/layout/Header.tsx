@@ -31,9 +31,11 @@ export function Header() {
     navigate(`/person/${id}`);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (window.confirm("Êtes-vous sûr de vouloir vous déconnecter de GeneTree ?")) {
-      logout();
+      await logout();
+      navigate('/');
+      window.location.reload();
     }
   };
 
