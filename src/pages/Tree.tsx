@@ -357,6 +357,70 @@ export function Tree() {
     }
   };
 
+  // Touch Handling for Panning & Pinch-to-Zoom
+  const touchStartDist = useRef<number | null>(null);
+  const touchStartCenter = useRef<{ x: number; y: number } | null>(null);
+  const lastTouchPos = useRef<{ x: number; y: number } | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      setIsDragging(true);
+      lastTouchPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      setDragStartPos({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+    } else if (e.touches.length === 2) {
+      setIsDragging(false);
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      touchStartDist.current = Math.sqrt(dx * dx + dy * dy);
+      touchStartCenter.current = {
+        x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+        y: (e.touches[0].clientY + e.touches[1].clientY) / 2
+      };
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 1 && isDragging && lastTouchPos.current) {
+      const dx = e.touches[0].clientX - lastTouchPos.current.x;
+      const dy = e.touches[0].clientY - lastTouchPos.current.y;
+      lastTouchPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      setTransform(prev => ({
+        ...prev,
+        x: prev.x + dx,
+        y: prev.y + dy
+      }));
+    } else if (e.touches.length === 2 && touchStartDist.current !== null && containerRef.current) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const factor = dist / touchStartDist.current;
+      touchStartDist.current = dist;
+
+      setTransform(prev => {
+        const newScale = Math.min(Math.max(0.2, prev.scale * factor), 2.5);
+        const rect = containerRef.current!.getBoundingClientRect();
+        const center = touchStartCenter.current || { x: rect.width / 2, y: rect.height / 2 };
+        const mouseX = center.x - rect.left;
+        const mouseY = center.y - rect.top;
+
+        const targetX = (mouseX - prev.x) / prev.scale;
+        const targetY = (mouseY - prev.y) / prev.scale;
+
+        const newX = mouseX - targetX * newScale;
+        const newY = mouseY - targetY * newScale;
+
+        return { x: newX, y: newY, scale: newScale };
+      });
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    touchStartDist.current = null;
+    touchStartCenter.current = null;
+    lastTouchPos.current = null;
+  };
+
   if (loading) {
     return <div className="flex justify-center p-12"><div className="animate-pulse w-8 h-8 rounded-full bg-primary/20"></div></div>;
   }
@@ -387,8 +451,8 @@ export function Tree() {
         <span className={`text-[10px] font-bold uppercase tracking-wider mb-2 px-3 py-1 rounded-full border shadow-xs transition-colors ${badgeStyle}`}>
           {roleLabel}
         </span>
-        <Card className={`transition-all w-64 p-5 flex flex-col items-center text-center space-y-3 bg-white border ${isCentral ? 'ring-4 ring-primary/30 border-primary shadow-lg' : isFocused ? 'ring-2 ring-primary border-primary shadow-xl' : 'border-border/80 hover:shadow-md cursor-pointer'}`}>
-          <div className="w-16 h-16 rounded-full border-2 border-accent bg-border ring-4 ring-primary/5 shadow-md flex items-center justify-center text-xl font-display font-medium text-text-primary overflow-hidden shrink-0">
+        <Card className={`transition-all w-44 sm:w-64 p-3 sm:p-5 flex flex-col items-center text-center space-y-2 sm:space-y-3 bg-white border ${isCentral ? 'ring-4 ring-primary/30 border-primary shadow-lg' : isFocused ? 'ring-2 ring-primary border-primary shadow-xl' : 'border-border/80 hover:shadow-md cursor-pointer'}`}>
+          <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 border-accent bg-border ring-4 ring-primary/5 shadow-md flex items-center justify-center text-sm sm:text-xl font-display font-medium text-text-primary overflow-hidden shrink-0">
             {p.photoUrl ? (
               <img src={p.photoUrl} alt={`${p.firstName} ${p.lastName}`} className="w-full h-full object-cover" />
             ) : (
@@ -543,11 +607,14 @@ export function Tree() {
 
           <div 
             ref={containerRef}
-            className={`relative w-full h-[65vh] min-h-[500px] bg-slate-50 rounded-2xl border border-border shadow-inner overflow-hidden active:cursor-grabbing ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+            className={`relative w-full h-[65vh] min-h-[500px] bg-slate-50 rounded-2xl border border-border shadow-inner overflow-hidden active:cursor-grabbing touch-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           >
             <style>{`
               @keyframes flowDash {
