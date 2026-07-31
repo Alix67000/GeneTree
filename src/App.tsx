@@ -6,6 +6,7 @@ import { Tree } from '@/pages/Tree';
 import { PersonDetail } from '@/pages/PersonDetail';
 import { AddPerson } from '@/pages/AddPerson';
 import { Photos } from '@/pages/Photos';
+import { Timeline } from '@/pages/Timeline';
 import { useAuth } from '@/hooks/useAuth';
 
 // PrivateRoute wrapper component to protect routes requiring authentication
@@ -26,6 +27,7 @@ export function App() {
         <Route path="person/edit/:id" element={<PrivateRoute><AddPerson /></PrivateRoute>} />
         <Route path="person/:id" element={<PrivateRoute><PersonDetail /></PrivateRoute>} />
         <Route path="photos" element={<PrivateRoute><Photos /></PrivateRoute>} />
+        <Route path="timeline" element={<PrivateRoute><Timeline /></PrivateRoute>} />
       </Route>
     </Routes>
   );

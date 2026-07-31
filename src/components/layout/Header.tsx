@@ -96,6 +96,7 @@ export function Header() {
             <div className="flex items-center gap-8 text-[13px] font-semibold text-text-secondary">
               <NavLink to="/tree" className={({isActive}) => isActive ? "text-primary border-b-2 border-primary pb-1" : "hover:text-primary transition-colors"}>Family Tree</NavLink>
               <NavLink to="/photos" className={({isActive}) => isActive ? "text-primary border-b-2 border-primary pb-1" : "hover:text-primary transition-colors"}>Gallery</NavLink>
+              <NavLink to="/timeline" className={({isActive}) => isActive ? "text-primary border-b-2 border-primary pb-1" : "hover:text-primary transition-colors"}>Timeline</NavLink>
             </div>
             <div className="flex items-center gap-4 border-l border-border pl-8">
               <div className="w-8 h-8 rounded-full border-2 border-white shadow-sm overflow-hidden flex items-center justify-center bg-accent text-white font-bold text-xs">
