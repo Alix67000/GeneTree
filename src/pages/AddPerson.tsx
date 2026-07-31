@@ -252,6 +252,13 @@ export function AddPerson() {
   const [isFallback, setIsFallback] = useState<boolean>(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>('');
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [rawImageSrc, setRawImageSrc] = useState<string>('');
+  const [zoom, setZoom] = useState<number>(1);
+  const [offset, setOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const imageRef = React.useRef<HTMLImageElement>(null);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -338,9 +345,61 @@ export function AddPerson() {
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setPhotoFile(file);
-      setPhotoPreview(URL.createObjectURL(file));
+      const objectUrl = URL.createObjectURL(file);
+      setRawImageSrc(objectUrl);
+      setZoom(1);
+      setOffset({ x: 0, y: 0 });
+      setShowCropModal(true);
+      e.target.value = '';
     }
+  };
+
+  const handleConfirmCrop = () => {
+    if (!imageRef.current) return;
+    const img = imageRef.current;
+    const canvas = document.createElement('canvas');
+    canvas.width = 600;
+    canvas.height = 600;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const size = Math.min(img.naturalWidth, img.naturalHeight);
+    const sSize = size / zoom;
+    const sX = (img.naturalWidth - sSize) / 2 - offset.x * (img.naturalWidth / img.width);
+    const sY = (img.naturalHeight - sSize) / 2 - offset.y * (img.naturalHeight / img.height);
+
+    ctx.clearRect(0, 0, 600, 600);
+    ctx.drawImage(img, sX, sY, sSize, sSize, 0, 0, 600, 600);
+
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const croppedFile = new File([blob], 'profile_cropped.webp', { type: 'image/webp' });
+        setPhotoFile(croppedFile);
+        setPhotoPreview(URL.createObjectURL(croppedFile));
+      }
+      setShowCropModal(false);
+    }, 'image/webp', 0.8);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
+    setIsDragging(true);
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    setDragStart({ x: clientX - offset.x, y: clientY - offset.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDragging) return;
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    setOffset({
+      x: clientX - dragStart.x,
+      y: clientY - dragStart.y
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -493,7 +552,7 @@ export function AddPerson() {
                 )}
               </div>
               <label className="flex-1 flex items-center justify-center gap-2 px-4 py-3 border border-dashed border-border rounded-[var(--radius-button)] cursor-pointer hover:border-primary/50 transition-colors bg-background/50 text-sm font-medium text-text-secondary hover:text-primary">
-                <FiUpload /> Choose Photo (Auto WebP compression)
+                <FiUpload /> Choose Photo & Crop
                 <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
               </label>
             </div>
@@ -658,6 +717,78 @@ export function AddPerson() {
           </div>
         </form>
       </Card>
+
+      {showCropModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[110] p-4">
+          <div className="bg-surface border border-border rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-5 text-center">
+            <h3 className="font-display text-lg font-bold text-text-primary">Recadrer la photo de profil</h3>
+            <p className="text-xs text-text-secondary">
+              Ajustez le zoom et déplacez l'image pour centrer le visage dans le cercle.
+            </p>
+
+            <div 
+              className="relative w-64 h-64 mx-auto rounded-full overflow-hidden border-4 border-primary shadow-inner bg-black cursor-grab active:cursor-grabbing select-none"
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onTouchStart={handleMouseDown}
+              onTouchMove={handleMouseMove}
+              onTouchEnd={handleMouseUp}
+            >
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <img
+                  ref={imageRef}
+                  src={rawImageSrc}
+                  alt="Crop preview"
+                  style={{
+                    transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
+                    transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+                    maxHeight: 'none',
+                    maxWidth: 'none',
+                  }}
+                  className="w-full h-full object-cover pointer-events-none"
+                />
+              </div>
+              <div className="absolute inset-0 border-2 border-white/50 rounded-full pointer-events-none"></div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs text-text-secondary font-medium">
+                <span>Zoom (1x - 3x)</span>
+                <span>{zoom.toFixed(1)}x</span>
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="3"
+                step="0.1"
+                value={zoom}
+                onChange={(e) => setZoom(parseFloat(e.target.value))}
+                className="w-full accent-primary cursor-pointer"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCropModal(false)}
+                className="flex-1"
+              >
+                Annuler
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleConfirmCrop}
+                className="flex-1"
+              >
+                Valider le recadrage
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

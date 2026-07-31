@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Link } from 'react-router-dom';
 import { getInitials, formatPersonAge } from '@/lib/utils';
+import { BirthdaysWidget } from '@/components/BirthdaysWidget';
 import { 
   FiPlus, FiMinus, FiRefreshCcw, FiUser, FiGrid, FiGitCommit, 
   FiHeart, FiEye, FiArrowUp, FiArrowDown, FiDownload
@@ -541,6 +542,8 @@ export function Tree() {
           </Link>
         </div>
       </div>
+
+      <BirthdaysWidget />
 
       {persons.length === 0 ? (
         <Card className="text-center py-16 flex flex-col items-center justify-center space-y-4 bg-white">

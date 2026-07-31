@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Link } from 'react-router-dom';
+import { BirthdaysWidget } from '@/components/BirthdaysWidget';
 
 export function Home() {
   const { currentUser, loginWithEmail } = useAuth();
@@ -32,7 +33,7 @@ export function Home() {
 
   if (currentUser) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center space-y-8">
+      <div className="flex flex-col items-center justify-center py-12 text-center space-y-8 max-w-4xl mx-auto w-full">
         <h1 className="text-4xl md:text-5xl lg:text-6xl text-primary font-bold">Welcome back to GeneTree</h1>
         <p className="text-xl text-text-secondary max-w-2xl">
           Continue building your family legacy. Add new relatives, preserve memories, and explore your ancestry.
@@ -44,6 +45,9 @@ export function Home() {
           <Link to="/person/add">
             <Button variant="outline" size="lg">Add Person</Button>
           </Link>
+        </div>
+        <div className="w-full pt-4">
+          <BirthdaysWidget />
         </div>
       </div>
     );

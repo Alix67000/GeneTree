@@ -7,6 +7,7 @@ import { PersonDetail } from '@/pages/PersonDetail';
 import { AddPerson } from '@/pages/AddPerson';
 import { Photos } from '@/pages/Photos';
 import { Timeline } from '@/pages/Timeline';
+import { NetworkView } from '@/pages/NetworkView';
 import { Admin } from '@/pages/Admin';
 import { About } from '@/pages/About';
 import { useAuth } from '@/hooks/useAuth';
@@ -30,6 +31,7 @@ export function App() {
         <Route path="person/edit/:id" element={<PrivateRoute><AddPerson /></PrivateRoute>} />
         <Route path="person/:id" element={<PrivateRoute><PersonDetail /></PrivateRoute>} />
         <Route path="photos" element={<PrivateRoute><Photos /></PrivateRoute>} />
+        <Route path="network" element={<PrivateRoute><NetworkView /></PrivateRoute>} />
         <Route path="timeline" element={<PrivateRoute><Timeline /></PrivateRoute>} />
         <Route path="admin" element={<PrivateRoute><Admin /></PrivateRoute>} />
       </Route>

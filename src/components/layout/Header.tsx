@@ -12,6 +12,8 @@ export function Header() {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<Person[]>([]);
 
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value);
@@ -31,16 +33,13 @@ export function Header() {
     navigate(`/person/${id}`);
   };
 
-  const handleLogout = async () => {
-    if (window.confirm("Êtes-vous sûr de vouloir vous déconnecter de GeneTree ?")) {
-      await logout();
-      navigate('/');
-      window.location.reload();
-    }
+  const handleLogout = () => {
+    setShowLogoutModal(true);
   };
 
   return (
-    <header className="h-16 bg-surface border-b border-border px-3 sm:px-6 flex items-center justify-between sticky top-0 z-50 w-full gap-2">
+    <>
+      <header className="h-16 bg-surface border-b border-border px-3 sm:px-6 flex items-center justify-between sticky top-0 z-50 w-full gap-2">
       <Link to="/" className="flex items-center gap-2 shrink-0">
         <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
           <div className="w-4 h-4 bg-accent rounded-full"></div>
@@ -78,6 +77,7 @@ export function Header() {
           <>
             <div className="hidden md:flex items-center gap-5 text-[13px] font-semibold text-text-secondary">
               <NavLink to="/tree" className={({isActive}) => isActive ? "text-primary border-b-2 border-primary pb-1" : "hover:text-primary transition-colors"}>Family Tree</NavLink>
+              <NavLink to="/network" className={({isActive}) => isActive ? "text-primary border-b-2 border-primary pb-1" : "hover:text-primary transition-colors"}>Réseau étendu</NavLink>
               <NavLink to="/photos" className={({isActive}) => isActive ? "text-primary border-b-2 border-primary pb-1" : "hover:text-primary transition-colors"}>Gallery</NavLink>
               <NavLink to="/timeline" className={({isActive}) => isActive ? "text-primary border-b-2 border-primary pb-1" : "hover:text-primary transition-colors"}>Timeline</NavLink>
               <NavLink to="/about" className={({isActive}) => isActive ? "text-primary border-b-2 border-primary pb-1" : "hover:text-primary transition-colors"}>About</NavLink>
@@ -97,5 +97,38 @@ export function Header() {
         )}
       </nav>
     </header>
+
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-surface border border-border rounded-xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center">
+            <h3 className="font-display text-lg font-bold text-text-primary">Déconnexion</h3>
+            <p className="text-sm text-text-secondary">
+              Êtes-vous sûr de vouloir vous déconnecter de GeneTree ?
+            </p>
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1"
+              >
+                Annuler
+              </Button>
+              <Button
+                size="sm"
+                onClick={async () => {
+                  await logout();
+                  navigate('/');
+                  window.location.reload();
+                }}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+              >
+                Se déconnecter
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
