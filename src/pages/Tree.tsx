@@ -505,36 +505,41 @@ export function Tree() {
   return (
     <div className="space-y-6 pb-6">
       {/* Header & Controls */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-border shadow-xs">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-surface p-4 rounded-xl border border-border shadow-sm w-full">
         <div>
-          <h1 className="text-3xl font-display font-semibold text-text-primary">Family Tree</h1>
-          <p className="text-sm text-text-secondary mt-1">Explore and navigate your family lineage</p>
+          <h1 className="text-2xl font-display font-semibold text-text-primary">Family Tree</h1>
+          <p className="text-xs text-text-secondary">Explore and navigate your family lineage</p>
         </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <Button variant="outline" className="inline-flex items-center gap-2" onClick={handleExportTree}>
-            <FiDownload /> Exporter l'arbre
-          </Button>
-
-          <div className="flex bg-background p-1 rounded-xl border border-border">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          <button
+            onClick={handleExportTree}
+            className="flex-1 sm:flex-none h-10 px-4 inline-flex items-center justify-center gap-2 border border-border bg-background rounded-lg text-xs font-medium text-text-primary hover:bg-surface-hover transition-colors"
+          >
+            ↓ Exporter l'arbre
+          </button>
+          <div className="flex-1 sm:flex-none inline-flex h-10 p-1 bg-background border border-border rounded-lg">
             <button
               onClick={() => setViewMode('tree')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${viewMode === 'tree' ? 'bg-primary text-white shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}
+              className={`flex-1 sm:flex-none px-3 h-full rounded-md text-xs font-medium transition-colors ${
+                viewMode === 'tree' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary'
+              }`}
             >
-              <FiGitCommit /> Canevas Infini
+              Canevas Infini
             </button>
             <button
               onClick={() => setViewMode('grid')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${viewMode === 'grid' ? 'bg-primary text-white shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}
+              className={`flex-1 sm:flex-none px-3 h-full rounded-md text-xs font-medium transition-colors ${
+                viewMode === 'grid' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary'
+              }`}
             >
-              <FiGrid /> Grille
+              Grille
             </button>
           </div>
-
-          <Link to="/person/add">
-            <Button className="inline-flex items-center gap-2">
-              <FiPlus /> Add Person
-            </Button>
+          <Link
+            to="/person/add"
+            className="flex-1 sm:flex-none h-10 px-4 inline-flex items-center justify-center gap-2 bg-primary text-white rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors shrink-0"
+          >
+            + Add Person
           </Link>
         </div>
       </div>
