@@ -9,8 +9,10 @@ export interface Person {
   lastName: string;
   gender?: Gender;
   birthDate?: string;
+  birthDateShamsi?: string;
   birthPlace?: string;
   deathDate?: string;
+  deathDateShamsi?: string;
   deathPlace?: string;
   isLiving?: boolean;
   notes?: string;

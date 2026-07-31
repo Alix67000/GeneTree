@@ -10,6 +10,7 @@ import { useFamily } from '@/hooks/useFamily';
 import { usePersons } from '@/hooks/usePersons';
 import { Gender, Person } from '@/types';
 import { compressAndResizeImage, blobToDataURL } from '@/lib/imageOptimizer';
+import { toShamsiDateString, toMiladiDateString } from '@/lib/calendarUtils';
 import { FiUpload, FiImage, FiX } from 'react-icons/fi';
 
 const LOCAL_GENDER_OPTIONS: { value: Gender; label: string }[] = [
@@ -127,9 +128,11 @@ export function AddPerson() {
     lastName: '',
     gender: 'male' as Gender,
     birthDate: '',
+    birthDateShamsi: '',
     birthPlace: '',
     isLiving: true,
     deathDate: '',
+    deathDateShamsi: '',
     deathPlace: '',
     notes: '',
     parentId1: '',
@@ -151,9 +154,11 @@ export function AddPerson() {
               lastName: data.lastName || '',
               gender: data.gender || 'unknown',
               birthDate: data.birthDate || '',
+              birthDateShamsi: data.birthDateShamsi || (data.birthDate ? toShamsiDateString(data.birthDate) : ''),
               birthPlace: data.birthPlace || '',
               isLiving: data.isLiving ?? true,
               deathDate: data.deathDate || '',
+              deathDateShamsi: data.deathDateShamsi || (data.deathDate ? toShamsiDateString(data.deathDate) : ''),
               deathPlace: data.deathPlace || '',
               notes: data.notes || '',
               parentId1: data.parentId1 || '',
@@ -174,10 +179,31 @@ export function AddPerson() {
   }, [id, isEditing]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    // Handle both checkbox and text inputs appropriately
     const target = e.target as HTMLInputElement;
     const value = target.type === 'checkbox' ? target.checked : target.value;
-    setFormData(prev => ({ ...prev, [target.name]: value }));
+    const name = target.name;
+    
+    setFormData(prev => {
+      const newData = { ...prev, [name]: value };
+      
+      // Auto-calculate Shamsi from Miladi
+      if (name === 'birthDate') {
+        newData.birthDateShamsi = typeof value === 'string' && value ? toShamsiDateString(value) : '';
+      }
+      if (name === 'deathDate') {
+        newData.deathDateShamsi = typeof value === 'string' && value ? toShamsiDateString(value) : '';
+      }
+      
+      // Auto-calculate Miladi from Shamsi
+      if (name === 'birthDateShamsi') {
+        newData.birthDate = typeof value === 'string' && value ? toMiladiDateString(value) : '';
+      }
+      if (name === 'deathDateShamsi') {
+        newData.deathDate = typeof value === 'string' && value ? toMiladiDateString(value) : '';
+      }
+
+      return newData;
+    });
   };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -370,14 +396,25 @@ export function AddPerson() {
             </select>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-text-primary">Birth Date</label>
+              <label className="text-sm font-medium text-text-primary">Birth Date (Miladi)</label>
               <input 
                 type="date" 
                 name="birthDate" 
                 value={formData.birthDate} 
                 onChange={handleChange}
+                className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-text-primary">Birth Date (Shamsi / Jalali)</label>
+              <input 
+                type="text" 
+                name="birthDateShamsi" 
+                value={formData.birthDateShamsi} 
+                onChange={handleChange}
+                placeholder="YYYY-MM-DD or YYYY/MM/DD"
                 className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
             </div>
@@ -406,14 +443,25 @@ export function AddPerson() {
           </div>
 
           {!formData.isLiving && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-black/5 rounded-xl">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-4 bg-black/5 rounded-xl">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">Death Date</label>
+                <label className="text-sm font-medium text-text-primary">Death Date (Miladi)</label>
                 <input 
                   type="date" 
                   name="deathDate" 
                   value={formData.deathDate} 
                   onChange={handleChange}
+                  className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-text-primary">Death Date (Shamsi)</label>
+                <input 
+                  type="text" 
+                  name="deathDateShamsi" 
+                  value={formData.deathDateShamsi} 
+                  onChange={handleChange}
+                  placeholder="YYYY-MM-DD or YYYY/MM/DD"
                   className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
