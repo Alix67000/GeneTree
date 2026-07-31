@@ -12,7 +12,7 @@ import { Person } from '@/types';
 
 export function Tree() {
   const { persons, loading } = usePersons();
-  const [viewMode, setViewMode] = useState<'tree' | 'grid'>('tree');
+  const [viewMode, setViewMode] = useState<'tree' | 'canvas' | 'grid'>('tree');
   const [centralPersonId, setCentralPersonId] = useState<string>('');
   const [focusedPersonId, setFocusedPersonId] = useState<string | null>(null);
   const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
@@ -451,41 +451,45 @@ export function Tree() {
         <span className={`text-[10px] font-bold uppercase tracking-wider mb-2 px-3 py-1 rounded-full border shadow-xs transition-colors ${badgeStyle}`}>
           {roleLabel}
         </span>
-        <Card className={`transition-all w-44 sm:w-64 p-3 sm:p-5 flex flex-col items-center text-center space-y-2 sm:space-y-3 bg-white border ${isCentral ? 'ring-4 ring-primary/30 border-primary shadow-lg' : isFocused ? 'ring-2 ring-primary border-primary shadow-xl' : 'border-border/80 hover:shadow-md cursor-pointer'}`}>
-          <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 border-accent bg-border ring-4 ring-primary/5 shadow-md flex items-center justify-center text-sm sm:text-xl font-display font-medium text-text-primary overflow-hidden shrink-0">
-            {p.photoUrl ? (
-              <img src={p.photoUrl} alt={`${p.firstName} ${p.lastName}`} className="w-full h-full object-cover" />
-            ) : (
-              getInitials(p.firstName, p.lastName)
-            )}
-          </div>
-          <div>
-            <h3 className="font-display font-bold text-base text-text-primary leading-tight">{p.firstName} {p.lastName}</h3>
-            <p className="text-[11px] text-text-secondary mt-1 italic">
-              {formatPersonAge(p.birthDate, p.deathDate, p.isLiving)}
-            </p>
-          </div>
+        <Card className={`transition-all w-44 sm:w-64 flex flex-col items-center text-center bg-white border ${isCentral ? 'ring-4 ring-primary/30 border-primary shadow-lg' : isFocused ? 'ring-2 ring-primary border-primary shadow-xl' : 'border-border/80 hover:shadow-md cursor-pointer'}`}>
+          <div className="flex flex-col items-center text-center p-3 sm:p-4 space-y-2.5 w-full">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-accent bg-border ring-2 ring-white shadow flex items-center justify-center text-base sm:text-lg font-display font-semibold text-text-primary overflow-hidden shrink-0">
+              {p.photoUrl ? (
+                <img src={p.photoUrl} alt={`${p.firstName} ${p.lastName}`} className="w-full h-full object-cover" />
+              ) : (
+                getInitials(p.firstName, p.lastName)
+              )}
+            </div>
 
-          <div className="flex items-center justify-center gap-2 w-full py-1.5 px-2 bg-slate-50 rounded-xl text-[10px] font-semibold text-slate-600 border border-slate-100">
-            <span className="flex items-center gap-1"><FiArrowUp className="w-3 h-3" /> {cParentsCount}</span>
-            <span>•</span>
-            <span className="flex items-center gap-1"><FiArrowDown className="w-3 h-3" /> {cChildrenCount}</span>
-          </div>
+            <div className="w-full truncate px-1">
+              <h3 className="font-display font-bold text-sm sm:text-base text-text-primary truncate">
+                {p.firstName} {p.lastName}
+              </h3>
+              <p className="text-[11px] text-text-secondary mt-0.5 font-medium truncate">
+                {formatPersonAge(p.birthDate, p.deathDate, p.isLiving)}
+              </p>
+            </div>
 
-          <div className="flex items-center gap-2 w-full pt-2 border-t border-border/50">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex-1 text-[11px] py-1 h-7"
-              onClick={() => handleSelectCentral(p.id)}
-            >
-              <FiGitCommit className="mr-1" /> Centrer
-            </Button>
-            <Link to={`/person/${p.id}`} className="flex-1">
-              <Button variant="primary" size="sm" className="w-full text-[11px] py-1 h-7">
-                <FiEye className="mr-1" /> Fiche
-              </Button>
-            </Link>
+            <div className="w-full pt-1.5 border-t border-border/60 flex items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setCentralPersonId(p.id);
+                }}
+                className="flex-1 h-8 px-2 inline-flex items-center justify-center gap-1 bg-background border border-border rounded-md text-[11px] font-medium text-text-primary hover:bg-surface-hover transition-colors"
+              >
+                ⌖ Centrer
+              </button>
+              <Link
+                to={`/person/${p.id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="flex-1 h-8 px-2 inline-flex items-center justify-center gap-1 bg-primary text-white rounded-md text-[11px] font-medium hover:bg-primary/90 transition-colors shadow-sm"
+              >
+                👁 Fiche
+              </Link>
+            </div>
           </div>
         </Card>
       </div>
@@ -505,30 +509,24 @@ export function Tree() {
   return (
     <div className="space-y-6 pb-6">
       {/* Header & Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-surface p-4 rounded-xl border border-border shadow-sm w-full">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface p-4 rounded-xl border border-border shadow-sm w-full">
         <div>
-          <h1 className="text-2xl font-display font-semibold text-text-primary">Family Tree</h1>
+          <h1 className="text-xl sm:text-2xl font-display font-semibold text-text-primary">Family Tree</h1>
           <p className="text-xs text-text-secondary">Explore and navigate your family lineage</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-          <button
-            onClick={handleExportTree}
-            className="flex-1 sm:flex-none h-10 px-4 inline-flex items-center justify-center gap-2 border border-border bg-background rounded-lg text-xs font-medium text-text-primary hover:bg-surface-hover transition-colors"
-          >
-            ↓ Exporter l'arbre
-          </button>
-          <div className="flex-1 sm:flex-none inline-flex h-10 p-1 bg-background border border-border rounded-lg">
+        <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+          <div className="inline-flex h-9 p-0.5 bg-background border border-border rounded-lg shrink-0">
             <button
-              onClick={() => setViewMode('tree')}
-              className={`flex-1 sm:flex-none px-3 h-full rounded-md text-xs font-medium transition-colors ${
-                viewMode === 'tree' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary'
+              onClick={() => setViewMode('canvas')}
+              className={`px-3 h-full rounded-md text-xs font-medium transition-colors ${
+                viewMode === 'canvas' || viewMode === 'tree' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary'
               }`}
             >
               Canevas Infini
             </button>
             <button
               onClick={() => setViewMode('grid')}
-              className={`flex-1 sm:flex-none px-3 h-full rounded-md text-xs font-medium transition-colors ${
+              className={`px-3 h-full rounded-md text-xs font-medium transition-colors ${
                 viewMode === 'grid' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary'
               }`}
             >
@@ -537,7 +535,7 @@ export function Tree() {
           </div>
           <Link
             to="/person/add"
-            className="flex-1 sm:flex-none h-10 px-4 inline-flex items-center justify-center gap-2 bg-primary text-white rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors shrink-0"
+            className="h-9 px-4 inline-flex items-center justify-center gap-1.5 bg-primary text-white rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors whitespace-nowrap shrink-0 shadow-sm"
           >
             + Add Person
           </Link>

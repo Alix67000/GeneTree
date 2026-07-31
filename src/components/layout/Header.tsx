@@ -1,24 +1,74 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { usePersons } from '@/hooks/usePersons';
 import { Button } from '@/components/ui/Button';
+import { Person } from '@/types';
 
 export function Header() {
   const { currentUser, loginWithGoogle, logout } = useAuth();
+  const { persons } = usePersons();
   const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState<Person[]>([]);
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    if (value.trim().length >= 2) {
+      const results = persons.filter(p =>
+        `${p.firstName} ${p.lastName}`.toLowerCase().includes(value.toLowerCase())
+      );
+      setSearchResults(results);
+    } else {
+      setSearchResults([]);
+    }
+  };
+
+  const handleSelectResult = (id: string) => {
+    setSearchTerm('');
+    setSearchResults([]);
+    navigate(`/person/${id}`);
+  };
 
   return (
-    <header className="h-16 bg-surface border-b border-border px-3 sm:px-6 flex items-center justify-between sticky top-0 z-50 w-full">
+    <header className="h-16 bg-surface border-b border-border px-3 sm:px-6 flex items-center justify-between sticky top-0 z-50 w-full gap-2">
       <Link to="/" className="flex items-center gap-2 shrink-0">
         <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
           <div className="w-4 h-4 bg-accent rounded-full"></div>
         </div>
-        <span className="font-display text-xl font-bold tracking-tight text-text-primary">GeneTree</span>
+        <span className="font-display text-xl font-bold tracking-tight text-text-primary hidden sm:inline">GeneTree</span>
       </Link>
+
+      {currentUser && (
+        <div className="relative flex-1 max-w-xs sm:max-w-sm mx-auto">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={handleSearch}
+            placeholder="Rechercher une personne..."
+            className="w-full h-9 px-3 text-xs bg-background border border-border rounded-full focus:outline-none focus:border-primary"
+          />
+          {searchResults.length > 0 && (
+            <div className="absolute top-10 left-0 right-0 bg-surface border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto z-50">
+              {searchResults.map(p => (
+                <div
+                  key={p.id}
+                  onClick={() => handleSelectResult(p.id)}
+                  className="px-3 py-2 text-xs hover:bg-surface-hover cursor-pointer border-b border-border last:border-0"
+                >
+                  {p.firstName} {p.lastName}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       <nav className="flex items-center gap-2 sm:gap-4 shrink-0">
         {currentUser ? (
           <>
-            <div className="hidden md:flex items-center gap-6 text-[13px] font-semibold text-text-secondary">
+            <div className="hidden md:flex items-center gap-4 text-[13px] font-semibold text-text-secondary">
               <NavLink to="/tree" className={({isActive}) => isActive ? "text-primary border-b-2 border-primary pb-1" : "hover:text-primary transition-colors"}>Family Tree</NavLink>
               <NavLink to="/photos" className={({isActive}) => isActive ? "text-primary border-b-2 border-primary pb-1" : "hover:text-primary transition-colors"}>Gallery</NavLink>
             </div>
