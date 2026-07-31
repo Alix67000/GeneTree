@@ -5,9 +5,9 @@ import { BottomNav } from './BottomNav';
 
 export function Layout() {
   return (
-    <div className="min-h-screen flex flex-col bg-background pb-20 md:pb-0">
+    <div className="min-h-screen flex flex-col bg-background pb-20 md:pb-0 overflow-x-hidden w-full">
       <Header />
-      <main className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 w-full max-w-[1920px] mx-auto px-2 sm:px-4 md:px-8 py-4">
         <Outlet />
       </main>
       <footer className="h-14 bg-surface border-t border-border px-8 flex items-center justify-between text-[11px] font-bold uppercase tracking-widest text-text-secondary mt-auto">
