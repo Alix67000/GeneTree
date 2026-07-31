@@ -119,6 +119,7 @@ export function AddPerson() {
   const { persons } = usePersons();
   const [loading, setLoading] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [isFallback, setIsFallback] = useState<boolean>(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>('');
   const [formData, setFormData] = useState({
@@ -231,9 +232,12 @@ export function AddPerson() {
           finalPhotoUrl = downloadUrl;
         } catch (uploadError: any) {
           console.error('Photo upload error or timeout, falling back to local Base64 WebP:', uploadError);
+          setIsFallback(true);
+          setUploadProgress(50);
           try {
             const compressedBlob = await compressAndResizeImage(photoFile, 600, 0.7);
             finalPhotoUrl = await blobToDataURL(compressedBlob);
+            setUploadProgress(100);
           } catch (fallbackErr) {
             console.error('Fallback Base64 conversion failed:', fallbackErr);
             const proceedWithoutPhoto = window.confirm(
@@ -327,11 +331,17 @@ export function AddPerson() {
                 <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
               </label>
             </div>
-            {uploadProgress > 0 && uploadProgress < 100 && (
+            {(loading && photoFile) && (
               <div className="space-y-1">
-                <div className="text-xs text-text-secondary">Upload en cours : {uploadProgress}%...</div>
-                <div className="w-full bg-gray-200 h-2 rounded">
-                  <div className="bg-primary h-2 rounded" style={{ width: `${uploadProgress}%` }}></div>
+                <div className="text-xs text-text-secondary">
+                  {uploadProgress === 0 
+                    ? "Envoi de la photo vers le serveur..." 
+                    : isFallback
+                      ? "Mode secours (Base64 WebP optimisé)..."
+                      : `Upload en cours : ${uploadProgress}%`}
+                </div>
+                <div className={`w-full bg-gray-200 h-2 rounded ${uploadProgress === 0 ? 'animate-pulse' : ''}`}>
+                  <div className={`bg-primary h-2 rounded ${uploadProgress === 0 ? 'w-full opacity-50' : ''}`} style={{ width: uploadProgress > 0 ? `${uploadProgress}%` : undefined }}></div>
                 </div>
               </div>
             )}
