@@ -41,7 +41,9 @@ export function PersonDetail() {
 
   const handleDelete = async () => {
     if (!id || !person) return;
-    const confirmed = window.confirm("Êtes-vous sûr de vouloir supprimer cette personne ?");
+    const confirmed = window.confirm(
+      `Êtes-vous sûr de vouloir supprimer définitivement ${person.firstName} ${person.lastName} de l'arbre familial ? Cette action est irréversible.`
+    );
     if (!confirmed) return;
 
     try {

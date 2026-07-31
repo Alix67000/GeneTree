@@ -31,6 +31,12 @@ export function Header() {
     navigate(`/person/${id}`);
   };
 
+  const handleLogout = () => {
+    if (window.confirm("Êtes-vous sûr de vouloir vous déconnecter de GeneTree ?")) {
+      logout();
+    }
+  };
+
   return (
     <header className="h-16 bg-surface border-b border-border px-3 sm:px-6 flex items-center justify-between sticky top-0 z-50 w-full gap-2">
       <Link to="/" className="flex items-center gap-2 shrink-0">
@@ -68,15 +74,20 @@ export function Header() {
       <nav className="flex items-center gap-2 sm:gap-4 shrink-0">
         {currentUser ? (
           <>
-            <div className="hidden md:flex items-center gap-4 text-[13px] font-semibold text-text-secondary">
+            <div className="hidden md:flex items-center gap-5 text-[13px] font-semibold text-text-secondary">
               <NavLink to="/tree" className={({isActive}) => isActive ? "text-primary border-b-2 border-primary pb-1" : "hover:text-primary transition-colors"}>Family Tree</NavLink>
               <NavLink to="/photos" className={({isActive}) => isActive ? "text-primary border-b-2 border-primary pb-1" : "hover:text-primary transition-colors"}>Gallery</NavLink>
+              <NavLink to="/timeline" className={({isActive}) => isActive ? "text-primary border-b-2 border-primary pb-1" : "hover:text-primary transition-colors"}>Timeline</NavLink>
+              <NavLink to="/about" className={({isActive}) => isActive ? "text-primary border-b-2 border-primary pb-1" : "hover:text-primary transition-colors"}>About</NavLink>
+              {currentUser.email === 'ahmadi67000@gmail.com' && (
+                <NavLink to="/admin" className={({isActive}) => isActive ? "text-primary border-b-2 border-primary pb-1" : "hover:text-primary transition-colors"}>Admin</NavLink>
+              )}
             </div>
             <div className="flex items-center gap-2 pl-2 border-l border-border">
               <div className="w-7 h-7 rounded-full bg-accent text-white font-bold text-xs flex items-center justify-center shrink-0">
                 {currentUser.displayName ? currentUser.displayName.charAt(0) : 'U'}
               </div>
-              <Button variant="outline" size="sm" onClick={logout} className="h-8 text-xs px-2 sm:px-3 shrink-0">Sign Out</Button>
+              <Button variant="outline" size="sm" onClick={handleLogout} className="h-8 text-xs px-2 sm:px-3 shrink-0">Sign Out</Button>
             </div>
           </>
         ) : (
