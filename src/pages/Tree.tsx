@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import { getInitials, formatPersonAge } from '@/lib/utils';
 import { 
   FiPlus, FiMinus, FiRefreshCcw, FiUser, FiGrid, FiGitCommit, 
-  FiHeart, FiEye, FiArrowUp, FiArrowDown
+  FiHeart, FiEye, FiArrowUp, FiArrowDown, FiDownload
 } from 'react-icons/fi';
 import { Person } from '@/types';
 
@@ -27,163 +27,194 @@ export function Tree() {
   const initialCenterDone = useRef(false);
 
   // Layout Engine
-  const { xPos, levels, layoutNodes } = useMemo(() => {
-    type TreeNode = {
-      id: string;
-      isCouple: boolean;
-      person1: string;
-      person2?: string;
-      children: string[];
-      gen: number;
-      x: number;
-      width: number;
-    };
+    const { xPos, levels, layoutNodes } = useMemo(() => {
+      type TreeNode = {
+        id: string;
+        isCouple: boolean;
+        person1: string;
+        person2?: string;
+        children: string[];
+        gen: number;
+        x: number;
+        width: number;
+        subtreeWidth?: number;
+      };
 
-    const genMap = new Map<string, number>();
-    persons.forEach(p => genMap.set(p.id, 0));
-    
-    let changed = true;
-    let iter = 0;
-    while(changed && iter < 100) {
-       changed = false;
-       iter++;
-       persons.forEach(p => {
-          let currentGen = genMap.get(p.id)!;
-          let newGen = currentGen;
-          
-          if (p.parentId1 || p.parentId2) {
-             const g1 = p.parentId1 ? genMap.get(p.parentId1)! : -999;
-             const g2 = p.parentId2 ? genMap.get(p.parentId2)! : -999;
-             const parentGen = Math.max(g1, g2);
-             if (parentGen + 1 > newGen) {
-                 newGen = parentGen + 1;
-             }
-          }
-          if (p.spouseId) {
-             const spouseGen = genMap.get(p.spouseId)!;
-             if (spouseGen > newGen) {
-                 newGen = spouseGen;
-             }
-          }
-          
-          if (newGen !== currentGen) {
-             genMap.set(p.id, newGen);
-             changed = true;
-          }
-       });
-    }
-
-    const coupleMap = new Map<string, string>();
-    persons.forEach(p => {
-      if (p.spouseId) {
-         const coupleId = [p.id, p.spouseId].sort().join('-');
-         coupleMap.set(p.id, coupleId);
+      const genMap = new Map<string, number>();
+      persons.forEach(p => genMap.set(p.id, 0));
+      
+      let changed = true;
+      let iter = 0;
+      while(changed && iter < 100) {
+         changed = false;
+         iter++;
+         persons.forEach(p => {
+            let currentGen = genMap.get(p.id)!;
+            let newGen = currentGen;
+            
+            if (p.parentId1 || p.parentId2) {
+               const g1 = p.parentId1 ? genMap.get(p.parentId1)! : -999;
+               const g2 = p.parentId2 ? genMap.get(p.parentId2)! : -999;
+               const parentGen = Math.max(g1, g2);
+               if (parentGen + 1 > newGen) {
+                   newGen = parentGen + 1;
+               }
+            }
+            if (p.spouseId) {
+               const spouseGen = genMap.get(p.spouseId)!;
+               if (spouseGen > newGen) {
+                   newGen = spouseGen;
+               }
+            }
+            
+            if (newGen !== currentGen) {
+               genMap.set(p.id, newGen);
+               changed = true;
+            }
+         });
       }
-    });
 
-    const nodes = new Map<string, TreeNode>();
-    persons.forEach(p => {
-       const gen = genMap.get(p.id)!;
-       if (coupleMap.has(p.id)) {
-          const coupleId = coupleMap.get(p.id)!;
-          if (!nodes.has(coupleId)) {
-             const [p1, p2] = coupleId.split('-');
-             nodes.set(coupleId, { id: coupleId, isCouple: true, person1: p1, person2: p2, children: [], gen, x: 0, width: 256 + 40 + 256 });
-          }
-       } else {
-          nodes.set(p.id, { id: p.id, isCouple: false, person1: p.id, children: [], gen, x: 0, width: 256 });
-       }
-    });
+      const coupleMap = new Map<string, string>();
+      persons.forEach(p => {
+        if (p.spouseId) {
+           const coupleId = [p.id, p.spouseId].sort().join('-');
+           coupleMap.set(p.id, coupleId);
+           coupleMap.set(p.spouseId, coupleId);
+        }
+      });
 
-    persons.forEach(p => {
-       if (p.parentId1 || p.parentId2) {
-          let parentNodeId: string | null = null;
-          if (p.parentId1 && p.parentId2) {
-             const cId = [p.parentId1, p.parentId2].sort().join('-');
-             if (nodes.has(cId)) parentNodeId = cId;
-          }
-          if (!parentNodeId && p.parentId1) {
-             parentNodeId = coupleMap.get(p.parentId1) || p.parentId1;
-          }
-          if (!parentNodeId && p.parentId2) {
-             parentNodeId = coupleMap.get(p.parentId2) || p.parentId2;
-          }
-          
-          if (parentNodeId) {
-             const childNodeId = coupleMap.get(p.id) || p.id;
-             const parentNode = nodes.get(parentNodeId);
-             if (parentNode && !parentNode.children.includes(childNodeId)) {
-                parentNode.children.push(childNodeId);
-             }
-          }
-       }
-    });
+      const nodes = new Map<string, TreeNode>();
+      persons.forEach(p => {
+         const gen = genMap.get(p.id)!;
+         if (coupleMap.has(p.id)) {
+            const coupleId = coupleMap.get(p.id)!;
+            if (!nodes.has(coupleId)) {
+               const [p1, p2] = coupleId.split('-');
+               nodes.set(coupleId, { id: coupleId, isCouple: true, person1: p1, person2: p2, children: [], gen, x: 0, width: 256 + 40 + 256 });
+            }
+         } else {
+            nodes.set(p.id, { id: p.id, isCouple: false, person1: p.id, children: [], gen, x: 0, width: 256 });
+         }
+      });
 
-    const getBirthDate = (nodeId: string) => {
-       const node = nodes.get(nodeId)!;
-       const p = persons.find(per => per.id === node.person1);
-       return p?.birthDate ? new Date(p.birthDate).getTime() : 0;
-    };
-    nodes.forEach(node => {
-       node.children.sort((a, b) => getBirthDate(a) - getBirthDate(b));
-    });
+      persons.forEach(p => {
+         if (p.parentId1 || p.parentId2) {
+            let parentNodeId: string | null = null;
+            if (p.parentId1 && p.parentId2) {
+               const cId = [p.parentId1, p.parentId2].sort().join('-');
+               if (nodes.has(cId)) parentNodeId = cId;
+            }
+            if (!parentNodeId && p.parentId1) {
+               parentNodeId = coupleMap.get(p.parentId1) || p.parentId1;
+            }
+            if (!parentNodeId && p.parentId2) {
+               parentNodeId = coupleMap.get(p.parentId2) || p.parentId2;
+            }
+            
+            if (parentNodeId) {
+               const childNodeId = coupleMap.get(p.id) || p.id;
+               const parentNode = nodes.get(parentNodeId);
+               if (parentNode && !parentNode.children.includes(childNodeId)) {
+                  parentNode.children.push(childNodeId);
+               }
+            }
+         }
+      });
 
-    const genNodes = new Map<number, TreeNode[]>();
-    nodes.forEach(n => {
-       if (!genNodes.has(n.gen)) genNodes.set(n.gen, []);
-       genNodes.get(n.gen)!.push(n);
-    });
-    
-    const NODE_SPACING = 80;
-    Array.from(genNodes.keys()).sort((a,b)=>a-b).forEach(gen => {
-       let currentX = 0;
-       genNodes.get(gen)!.forEach(n => {
-          n.x = currentX + n.width / 2;
-          currentX += n.width + NODE_SPACING;
-       });
-    });
+      const getBirthDate = (nodeId: string) => {
+         const node = nodes.get(nodeId)!;
+         const p = persons.find(per => per.id === node.person1);
+         return p?.birthDate ? new Date(p.birthDate).getTime() : 0;
+      };
+      nodes.forEach(node => {
+         node.children.sort((a, b) => getBirthDate(a) - getBirthDate(b));
+      });
 
-    for (let iter = 0; iter < 100; iter++) {
-       nodes.forEach(n => {
-          if (n.children.length > 0) {
-             const childrenX = n.children.map(cid => nodes.get(cid)!.x);
-             const avgX = childrenX.reduce((a,b)=>a+b,0) / childrenX.length;
-             n.x = (n.x + avgX) / 2;
+      // Top-Down Subtree Layout
+      const NODE_SPACING = 80;
+      const isChild = new Set<string>();
+      nodes.forEach(n => {
+         n.children.forEach(c => isChild.add(c));
+      });
+      const roots = Array.from(nodes.values()).filter(n => !isChild.has(n.id));
+
+      const visitedCalc = new Set<string>();
+      function calculateSubtreeWidth(nodeId: string): number {
+         const node = nodes.get(nodeId)!;
+         if (visitedCalc.has(nodeId)) return node.subtreeWidth || node.width;
+         visitedCalc.add(nodeId);
+         
+         if (node.children.length === 0) {
+            node.subtreeWidth = node.width;
+            return node.subtreeWidth;
+         }
+         
+         let childrenWidth = 0;
+         node.children.forEach((cId, index) => {
+            childrenWidth += calculateSubtreeWidth(cId);
+            if (index < node.children.length - 1) {
+               childrenWidth += NODE_SPACING;
+            }
+         });
+         
+         node.subtreeWidth = Math.max(node.width, childrenWidth);
+         return node.subtreeWidth;
+      }
+      
+      roots.forEach(r => calculateSubtreeWidth(r.id));
+      nodes.forEach(n => {
+          if (!visitedCalc.has(n.id)) {
+              roots.push(n);
+              calculateSubtreeWidth(n.id);
           }
-       });
-       nodes.forEach(n => {
-          const parentNode = Array.from(nodes.values()).find(p => p.children.includes(n.id));
-          if (parentNode) {
-             n.x = (n.x + parentNode.x) / 2;
-          }
-       });
-       
-       Array.from(genNodes.keys()).forEach(gen => {
-          const gNodes = genNodes.get(gen)!;
-          gNodes.sort((a, b) => a.x - b.x);
-          for (let i = 1; i < gNodes.length; i++) {
-             const prev = gNodes[i-1];
-             const curr = gNodes[i];
-             const minX = prev.x + prev.width/2 + NODE_SPACING + curr.width/2;
-             if (curr.x < minX) {
-                curr.x = minX;
-             }
-          }
-       });
-    }
+      });
 
-    const xPosMap = new Map<string, number>();
-    nodes.forEach(n => {
-       if (n.isCouple && n.person2) {
-          xPosMap.set(n.person1, n.x - 148);
-          xPosMap.set(n.person2, n.x + 148);
-       } else {
-          xPosMap.set(n.person1, n.x);
-       }
-    });
+      const visitedAssign = new Set<string>();
+      function assignXPositions(nodeId: string, startX: number) {
+         const node = nodes.get(nodeId)!;
+         if (visitedAssign.has(nodeId)) return;
+         visitedAssign.add(nodeId);
+         
+         const center = startX + node.subtreeWidth! / 2;
+         node.x = center;
+         
+         const unvisitedChildren = node.children.filter(cId => !visitedAssign.has(cId));
+         if (unvisitedChildren.length > 0) {
+            let childrenWidth = 0;
+            unvisitedChildren.forEach(cId => {
+               childrenWidth += nodes.get(cId)!.subtreeWidth!;
+            });
+            childrenWidth += (unvisitedChildren.length - 1) * NODE_SPACING;
+            
+            let currentX = center - (childrenWidth / 2);
+            unvisitedChildren.forEach(cId => {
+               const child = nodes.get(cId)!;
+               assignXPositions(cId, currentX);
+               currentX += child.subtreeWidth! + NODE_SPACING;
+            });
+         }
+      }
 
-    return { xPos: xPosMap, levels: genMap, layoutNodes: Array.from(nodes.values()) };
-  }, [persons]);
+      let currentRootX = 0;
+      roots.forEach(r => {
+         if (!visitedAssign.has(r.id)) {
+             assignXPositions(r.id, currentRootX);
+             currentRootX += nodes.get(r.id)!.subtreeWidth! + NODE_SPACING;
+         }
+      });
+
+      const xPosMap = new Map<string, number>();
+      nodes.forEach(n => {
+         if (n.isCouple && n.person2) {
+            xPosMap.set(n.person1, n.x - 148);
+            xPosMap.set(n.person2, n.x + 148);
+         } else {
+            xPosMap.set(n.person1, n.x);
+         }
+      });
+
+      return { xPos: xPosMap, levels: genMap, layoutNodes: Array.from(nodes.values()) };
+    }, [persons]);
 
   // Set default central person when persons load
   useEffect(() => {
@@ -216,7 +247,7 @@ export function Tree() {
       
       persons.forEach(p => {
         const x = xPos.get(p.id) || 0;
-        const y = (levels.get(p.id) || 0) * 350;
+        const y = (levels.get(p.id) || 0) * 300;
         if (x < minX) minX = x;
         if (x > maxX) maxX = x;
         if (y < minY) minY = y;
@@ -250,7 +281,7 @@ export function Tree() {
     setCentralPersonId(id);
     setHighlightedPersonId(id);
     const x = xPos.get(id) || 0;
-    const y = (levels.get(id) || 0) * 350;
+    const y = (levels.get(id) || 0) * 300;
     centerOnPoint(x, y, 1); // Reset scale to 1 on selection for clear view
     setTimeout(() => {
       setHighlightedPersonId(null);
@@ -397,6 +428,16 @@ export function Tree() {
     );
   };
 
+  const handleExportTree = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(persons, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", "family_tree.json");
+    document.body.appendChild(downloadAnchorNode); // required for firefox
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+  };
+
   return (
     <div className="space-y-6 pb-6">
       {/* Header & Controls */}
@@ -407,6 +448,10 @@ export function Tree() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          <Button variant="outline" className="inline-flex items-center gap-2" onClick={handleExportTree}>
+            <FiDownload /> Exporter l'arbre
+          </Button>
+
           <div className="flex bg-background p-1 rounded-xl border border-border">
             <button
               onClick={() => setViewMode('tree')}
@@ -531,7 +576,7 @@ export function Tree() {
                 const paths = [];
                 if (node.children.length > 0) {
                   const parentX = node.x;
-                  const parentY = node.gen * 350;
+                  const parentY = node.gen * 300;
                   const offset = 120; // drop down from center
                   const startY = parentY + offset;
                   const midY = startY + 60; // horizontal line Y
@@ -598,7 +643,7 @@ export function Tree() {
                   
                   childTargets.forEach(({ cid, childNode, targetX }) => {
                      if (!childNode) return;
-                     const childY = childNode.gen * 350;
+                     const childY = childNode.gen * 300;
                      const childActive = isActive || (focusedPersonId && (childNode.person1 === focusedPersonId || childNode.person2 === focusedPersonId));
 
                      paths.push(
@@ -615,7 +660,7 @@ export function Tree() {
                 if (node.isCouple && node.person2) {
                   const p1X = xPos.get(node.person1) || 0;
                   const p2X = xPos.get(node.person2) || 0;
-                  const y = node.gen * 350;
+                  const y = node.gen * 300;
                   
                   const isCoupleActive = focusedPersonId ? (node.person1 === focusedPersonId || node.person2 === focusedPersonId) : false;
                   
@@ -635,7 +680,7 @@ export function Tree() {
               </svg>
               {persons.map(p => {
                 const x = xPos.get(p.id) || 0;
-                const y = (levels.get(p.id) || 0) * 350;
+                const y = (levels.get(p.id) || 0) * 300;
                 
                 let role = 'Membre';
                 let badgeStyle = 'bg-slate-100 text-slate-700 border-slate-200';
@@ -699,7 +744,7 @@ export function Tree() {
                   
                   persons.forEach(p => {
                     const x = xPos.get(p.id) || 0;
-                    const y = (levels.get(p.id) || 0) * 350;
+                    const y = (levels.get(p.id) || 0) * 300;
                     if (x < minX) minX = x;
                     if (x > maxX) maxX = x;
                     if (y < minY) minY = y;
