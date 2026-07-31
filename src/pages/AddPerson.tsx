@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { collection, addDoc, updateDoc, doc, getDoc, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/services/firebase';
 import { COLLECTIONS } from '@/lib/constants';
 import { Card } from '@/components/ui/Card';
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { useFamily } from '@/hooks/useFamily';
 import { usePersons } from '@/hooks/usePersons';
 import { Gender, Person } from '@/types';
-import { compressAndResizeImage, uploadWithTimeout, blobToDataURL } from '@/lib/imageOptimizer';
+import { compressAndResizeImage, blobToDataURL } from '@/lib/imageOptimizer';
 import { FiUpload, FiImage, FiX } from 'react-icons/fi';
 
 const LOCAL_GENDER_OPTIONS: { value: Gender; label: string }[] = [
@@ -118,6 +118,7 @@ export function AddPerson() {
   const { activeFamilyId } = useFamily();
   const { persons } = usePersons();
   const [loading, setLoading] = useState<boolean>(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>('');
   const [formData, setFormData] = useState({
@@ -213,8 +214,21 @@ export function AddPerson() {
           // Compress and resize image to WebP
           const compressedBlob = await compressAndResizeImage(photoFile, 600, 0.7);
           const storageRef = ref(storage, `family_photos/${Date.now()}_${photoFile.name.replace(/\.[^/.]+$/, '')}.webp`);
-          const snapshot = await uploadWithTimeout(uploadBytes(storageRef, compressedBlob, { contentType: 'image/webp' }), 8000);
-          finalPhotoUrl = await getDownloadURL(snapshot.ref);
+          
+          const uploadTask = uploadBytesResumable(storageRef, compressedBlob, { contentType: 'image/webp' });
+          
+          const downloadUrl = await new Promise<string>((resolve, reject) => {
+            uploadTask.on('state_changed', 
+              (snapshot) => {
+                setUploadProgress(Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100));
+              },
+              (error) => reject(error),
+              () => {
+                getDownloadURL(uploadTask.snapshot.ref).then(resolve);
+              }
+            );
+          });
+          finalPhotoUrl = downloadUrl;
         } catch (uploadError: any) {
           console.error('Photo upload error or timeout, falling back to local Base64 WebP:', uploadError);
           try {
@@ -313,6 +327,14 @@ export function AddPerson() {
                 <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
               </label>
             </div>
+            {uploadProgress > 0 && uploadProgress < 100 && (
+              <div className="space-y-1">
+                <div className="text-xs text-text-secondary">Upload en cours : {uploadProgress}%...</div>
+                <div className="w-full bg-gray-200 h-2 rounded">
+                  <div className="bg-primary h-2 rounded" style={{ width: `${uploadProgress}%` }}></div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
