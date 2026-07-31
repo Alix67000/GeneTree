@@ -11,7 +11,133 @@ import { usePersons } from '@/hooks/usePersons';
 import { Gender, Person } from '@/types';
 import { compressAndResizeImage, blobToDataURL } from '@/lib/imageOptimizer';
 import { toShamsiDateString, toMiladiDateString } from '@/lib/calendarUtils';
-import { FiUpload, FiImage, FiX } from 'react-icons/fi';
+import { FiUpload, FiImage, FiX, FiCalendar } from 'react-icons/fi';
+
+const JALALI_MONTHS = [
+  "Farvardin", "Ordibehesht", "Khordad",
+  "Tir", "Mordad", "Shahrivar",
+  "Mehr", "Aban", "Azar",
+  "Dey", "Bahman", "Esfand"
+];
+
+function JalaliDatePicker({
+  label,
+  value,
+  onChange,
+  placeholder
+}: {
+  label: string;
+  value: string;
+  onChange: (val: string) => void;
+  placeholder?: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const wrapperRef = React.useRef<HTMLDivElement>(null);
+  const [selectedYear, setSelectedYear] = useState<number>(1370);
+  const [selectedMonth, setSelectedMonth] = useState<number>(1);
+
+  // Initialize from value if present
+  useEffect(() => {
+    if (value && isOpen) {
+      const parts = value.split(/[-/]/);
+      if (parts.length === 3) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        if (!isNaN(y)) setSelectedYear(y);
+        if (!isNaN(m)) setSelectedMonth(m);
+      }
+    }
+  }, [value, isOpen]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Determine days in month
+  const getDaysInMonth = (year: number, month: number) => {
+    if (month <= 6) return 31;
+    if (month <= 11) return 30;
+    // Simple leap year calculation for Jalali (33-year cycle approximation)
+    const rem = year % 33;
+    const isLeap = [1, 5, 9, 13, 17, 22, 26, 30].includes(rem);
+    return isLeap ? 30 : 29;
+  };
+
+  const daysCount = getDaysInMonth(selectedYear, selectedMonth);
+  const daysArray = Array.from({ length: daysCount }, (_, i) => i + 1);
+  const yearsArray = Array.from({ length: 1406 - 1300 }, (_, i) => 1405 - i);
+
+  return (
+    <div className="relative space-y-2" ref={wrapperRef}>
+      <label className="text-sm font-medium text-text-primary">{label}</label>
+      <div className="relative">
+        <input 
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onClick={() => setIsOpen(true)}
+          placeholder={placeholder}
+          className="w-full px-4 py-2 pr-10 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
+        />
+        <button 
+          type="button" 
+          onClick={() => setIsOpen(!isOpen)} 
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-primary"
+        >
+          <FiCalendar size={18} />
+        </button>
+      </div>
+
+      {isOpen && (
+        <div className="absolute z-50 mt-1 w-[280px] bg-white border border-border rounded-xl shadow-xl p-4">
+          <div className="flex gap-2 mb-4">
+            <select 
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(Number(e.target.value))}
+              className="flex-1 p-2 border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary bg-white"
+            >
+              {JALALI_MONTHS.map((m, i) => (
+                <option key={i} value={i + 1}>{i + 1}. {m}</option>
+              ))}
+            </select>
+            <select 
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="w-24 p-2 border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary bg-white"
+            >
+              {yearsArray.map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="grid grid-cols-7 gap-1">
+            {daysArray.map(d => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => {
+                  const formatted = `${selectedYear}/${String(selectedMonth).padStart(2, '0')}/${String(d).padStart(2, '0')}`;
+                  onChange(formatted);
+                  setIsOpen(false);
+                }}
+                className="w-8 h-8 flex items-center justify-center rounded-full text-sm hover:bg-primary/10 hover:text-primary transition-colors focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                {d}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const LOCAL_GENDER_OPTIONS: { value: Gender; label: string }[] = [
   { value: 'male', label: 'Masculin (Male)' },
@@ -407,17 +533,18 @@ export function AddPerson() {
                 className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-text-primary">Birth Date (Shamsi / Jalali)</label>
-              <input 
-                type="text" 
-                name="birthDateShamsi" 
-                value={formData.birthDateShamsi} 
-                onChange={handleChange}
-                placeholder="YYYY-MM-DD or YYYY/MM/DD"
-                className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
-              />
-            </div>
+            <JalaliDatePicker
+              label="Birth Date (Shamsi / Jalali)"
+              value={formData.birthDateShamsi}
+              onChange={(val) => {
+                setFormData(prev => ({
+                  ...prev,
+                  birthDateShamsi: val,
+                  birthDate: val ? toMiladiDateString(val) : ''
+                }));
+              }}
+              placeholder="YYYY/MM/DD"
+            />
             <div className="space-y-2">
               <label className="text-sm font-medium text-text-primary">Birth Place</label>
               <input 
@@ -454,17 +581,18 @@ export function AddPerson() {
                   className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">Death Date (Shamsi)</label>
-                <input 
-                  type="text" 
-                  name="deathDateShamsi" 
-                  value={formData.deathDateShamsi} 
-                  onChange={handleChange}
-                  placeholder="YYYY-MM-DD or YYYY/MM/DD"
-                  className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
-                />
-              </div>
+              <JalaliDatePicker
+                label="Death Date (Shamsi)"
+                value={formData.deathDateShamsi}
+                onChange={(val) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    deathDateShamsi: val,
+                    deathDate: val ? toMiladiDateString(val) : ''
+                  }));
+                }}
+                placeholder="YYYY/MM/DD"
+              />
               <div className="space-y-2">
                 <label className="text-sm font-medium text-text-primary">Death Place</label>
                 <input 

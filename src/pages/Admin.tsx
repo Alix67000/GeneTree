@@ -1,0 +1,221 @@
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { Navigate } from 'react-router-dom';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { db } from '@/services/firebase';
+import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+
+const ADMIN_EMAILS = ['ahmadi67000@gmail.com'];
+
+interface AllowedUser {
+  id: string;
+  emailOrUsername: string;
+  password?: string;
+  displayName: string;
+  createdAt?: any;
+}
+
+export function Admin() {
+  const { currentUser } = useAuth();
+  
+  const [users, setUsers] = useState<AllowedUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  const [formData, setFormData] = useState({
+    emailOrUsername: '',
+    password: '',
+    displayName: ''
+  });
+  
+  const [formLoading, setFormLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const isAdmin = currentUser?.email && ADMIN_EMAILS.includes(currentUser.email);
+
+  useEffect(() => {
+    if (isAdmin) {
+      loadUsers();
+    }
+  }, [isAdmin]);
+
+  const loadUsers = async () => {
+    setLoading(true);
+    try {
+      const q = query(collection(db, 'allowed_users'), orderBy('createdAt', 'desc'));
+      const snapshot = await getDocs(q);
+      const loaded = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as AllowedUser[];
+      setUsers(loaded);
+    } catch (err) {
+      console.error("Error loading users:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setFormLoading(true);
+
+    try {
+      if (!formData.emailOrUsername || !formData.password || !formData.displayName) {
+        throw new Error("Tous les champs sont obligatoires.");
+      }
+      
+      await addDoc(collection(db, 'allowed_users'), {
+        emailOrUsername: formData.emailOrUsername.trim(),
+        password: formData.password,
+        displayName: formData.displayName.trim(),
+        createdBy: currentUser?.uid,
+        createdAt: serverTimestamp()
+      });
+      
+      setSuccess("Accès membre créé avec succès.");
+      setFormData({ emailOrUsername: '', password: '', displayName: '' });
+      loadUsers();
+    } catch (err: any) {
+      setError(err.message || "Une erreur est survenue.");
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer cet accès ?")) {
+      try {
+        await deleteDoc(doc(db, 'allowed_users', id));
+        setUsers(prev => prev.filter(u => u.id !== id));
+      } catch (err) {
+        console.error("Error deleting user:", err);
+      }
+    }
+  };
+
+  if (!currentUser) return <Navigate to="/" />;
+  
+  if (!isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+        <h2 className="text-3xl font-bold text-red-600 mb-4">Accès refusé</h2>
+        <p className="text-text-secondary">Cette page est réservée à l'administrateur.</p>
+        <Button className="mt-8" onClick={() => window.history.back()}>Retour</Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+      <div className="flex justify-between items-end">
+        <div>
+          <h1 className="text-3xl font-display font-bold text-text-primary">Administration</h1>
+          <p className="text-text-secondary mt-2">Gestion des accès membres</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="md:col-span-1">
+          <Card className="p-6 sticky top-24">
+            <h2 className="text-xl font-semibold mb-6">Créer un accès</h2>
+            
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-100">
+                {error}
+              </div>
+            )}
+            
+            {success && (
+              <div className="mb-4 p-3 bg-green-50 text-green-600 text-sm rounded-md border border-green-100">
+                {success}
+              </div>
+            )}
+            
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-text-primary">Identifiant ou E-mail</label>
+                <input 
+                  type="text" 
+                  name="emailOrUsername"
+                  value={formData.emailOrUsername}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  placeholder="ex: jean.dupont"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-text-primary">Mot de passe initial</label>
+                <input 
+                  type="password" 
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  placeholder="••••••••"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-text-primary">Nom complet</label>
+                <input 
+                  type="text" 
+                  name="displayName"
+                  value={formData.displayName}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  placeholder="ex: Jean Dupont"
+                />
+              </div>
+              
+              <Button type="submit" disabled={formLoading} className="w-full pt-2">
+                {formLoading ? 'Création...' : 'Créer l\'accès'}
+              </Button>
+            </form>
+          </Card>
+        </div>
+        
+        <div className="md:col-span-2">
+          <Card className="p-0 overflow-hidden">
+            <div className="p-6 border-b border-border">
+              <h2 className="text-xl font-semibold">Accès existants ({users.length})</h2>
+            </div>
+            
+            {loading ? (
+              <div className="p-8 text-center text-text-secondary">Chargement...</div>
+            ) : users.length === 0 ? (
+              <div className="p-8 text-center text-text-secondary">Aucun accès créé pour le moment.</div>
+            ) : (
+              <div className="divide-y divide-border">
+                {users.map(user => (
+                  <div key={user.id} className="p-6 flex items-center justify-between hover:bg-surface transition-colors">
+                    <div>
+                      <div className="font-semibold text-text-primary">{user.displayName}</div>
+                      <div className="text-sm text-text-secondary mt-1">Identifiant : {user.emailOrUsername}</div>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => handleDelete(user.id)}
+                      className="text-red-500 hover:bg-red-50 hover:text-red-600 border-red-200"
+                    >
+                      Supprimer
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}

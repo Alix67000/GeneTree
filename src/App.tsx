@@ -7,6 +7,8 @@ import { PersonDetail } from '@/pages/PersonDetail';
 import { AddPerson } from '@/pages/AddPerson';
 import { Photos } from '@/pages/Photos';
 import { Timeline } from '@/pages/Timeline';
+import { Admin } from '@/pages/Admin';
+import { About } from '@/pages/About';
 import { useAuth } from '@/hooks/useAuth';
 
 // PrivateRoute wrapper component to protect routes requiring authentication
@@ -22,12 +24,14 @@ export function App() {
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<Home />} />
+        <Route path="about" element={<About />} />
         <Route path="tree" element={<PrivateRoute><Tree /></PrivateRoute>} />
         <Route path="person/add" element={<PrivateRoute><AddPerson /></PrivateRoute>} />
         <Route path="person/edit/:id" element={<PrivateRoute><AddPerson /></PrivateRoute>} />
         <Route path="person/:id" element={<PrivateRoute><PersonDetail /></PrivateRoute>} />
         <Route path="photos" element={<PrivateRoute><Photos /></PrivateRoute>} />
         <Route path="timeline" element={<PrivateRoute><Timeline /></PrivateRoute>} />
+        <Route path="admin" element={<PrivateRoute><Admin /></PrivateRoute>} />
       </Route>
     </Routes>
   );

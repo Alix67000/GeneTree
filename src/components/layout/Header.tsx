@@ -3,7 +3,9 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { usePersons } from '@/hooks/usePersons';
 import { Button } from '@/components/ui/Button';
-import { FiSearch } from 'react-icons/fi';
+import { FiSearch, FiSettings } from 'react-icons/fi';
+
+const ADMIN_EMAILS = ['ahmadi67000@gmail.com'];
 
 export function Header() {
   const { currentUser, loginWithGoogle, logout } = useAuth();
@@ -13,9 +15,12 @@ export function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
+  const isAdmin = currentUser?.email && ADMIN_EMAILS.includes(currentUser.email);
+
   const filteredPersons = persons.filter(p => 
     `${p.firstName} ${p.lastName}`.toLowerCase().includes(searchQuery.toLowerCase())
   ).slice(0, 5); // limit to 5 results
+
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -97,6 +102,11 @@ export function Header() {
               <NavLink to="/tree" className={({isActive}) => isActive ? "text-primary border-b-2 border-primary pb-1" : "hover:text-primary transition-colors"}>Family Tree</NavLink>
               <NavLink to="/photos" className={({isActive}) => isActive ? "text-primary border-b-2 border-primary pb-1" : "hover:text-primary transition-colors"}>Gallery</NavLink>
               <NavLink to="/timeline" className={({isActive}) => isActive ? "text-primary border-b-2 border-primary pb-1" : "hover:text-primary transition-colors"}>Timeline</NavLink>
+              {isAdmin && (
+                <NavLink to="/admin" className={({isActive}) => isActive ? "text-primary border-b-2 border-primary pb-1 flex items-center gap-1" : "hover:text-primary transition-colors flex items-center gap-1"}>
+                  <FiSettings className="mb-0.5" /> Admin
+                </NavLink>
+              )}
             </div>
             <div className="flex items-center gap-4 border-l border-border pl-8">
               <div className="w-8 h-8 rounded-full border-2 border-white shadow-sm overflow-hidden flex items-center justify-center bg-accent text-white font-bold text-xs">

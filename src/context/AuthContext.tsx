@@ -6,9 +6,12 @@ import {
   signOut, 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
+  signInAnonymously,
+  updateProfile,
   User as FirebaseUser 
 } from 'firebase/auth';
-import { auth } from '@/services/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { auth, db } from '@/services/firebase';
 import { AuthContextType } from '@/types';
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -30,8 +33,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return signInWithPopup(auth, provider);
   };
 
-  const loginWithEmail = (email: string, password: string) => {
-    return signInWithEmailAndPassword(auth, email, password);
+  const loginWithEmail = async (email: string, password: string) => {
+    try {
+      return await signInWithEmailAndPassword(auth, email, password);
+    } catch (error: any) {
+      if (
+        error.code === 'auth/invalid-credential' || 
+        error.code === 'auth/user-not-found' || 
+        error.code === 'auth/wrong-password' || 
+        error.code === 'auth/invalid-email'
+      ) {
+        // Fallback: check allowed_users collection
+        try {
+          const usersRef = collection(db, 'allowed_users');
+          const q = query(usersRef, where('emailOrUsername', '==', email), where('password', '==', password));
+          const snapshot = await getDocs(q);
+          
+          if (!snapshot.empty) {
+            const userData = snapshot.docs[0].data();
+            const result = await signInAnonymously(auth);
+            
+            if (userData.displayName && result.user) {
+              await updateProfile(result.user, {
+                displayName: userData.displayName
+              });
+            }
+            
+            return result;
+          }
+        } catch (dbError) {
+          console.error('Error checking allowed_users', dbError);
+        }
+      }
+      throw error;
+    }
   };
 
   const registerWithEmail = (email: string, password: string) => {
@@ -56,3 +91,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     </AuthContext.Provider>
   );
 }
+
