@@ -335,10 +335,10 @@ export function AddPerson() {
               <div className="space-y-1">
                 <div className="text-xs text-text-secondary">
                   {uploadProgress === 0 
-                    ? "Envoi de la photo vers le serveur..." 
+                    ? "Uploading photo to server..." 
                     : isFallback
-                      ? "Mode secours (Base64 WebP optimisé)..."
-                      : `Upload en cours : ${uploadProgress}%`}
+                      ? "Fallback mode (Optimized Base64 WebP)..."
+                      : `Uploading: ${uploadProgress}%`}
                 </div>
                 <div className={`w-full bg-gray-200 h-2 rounded ${uploadProgress === 0 ? 'animate-pulse' : ''}`}>
                   <div className={`bg-primary h-2 rounded ${uploadProgress === 0 ? 'w-full opacity-50' : ''}`} style={{ width: uploadProgress > 0 ? `${uploadProgress}%` : undefined }}></div>
