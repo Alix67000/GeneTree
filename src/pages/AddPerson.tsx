@@ -219,19 +219,28 @@ export function AddPerson() {
           const uploadTask = uploadBytesResumable(storageRef, compressedBlob, { contentType: 'image/webp' });
           
           const downloadUrl = await new Promise<string>((resolve, reject) => {
+            const timer = setTimeout(() => {
+              uploadTask.cancel();
+              reject(new Error('Firebase Storage upload timed out after 5000ms'));
+            }, 5000);
+
             uploadTask.on('state_changed', 
               (snapshot) => {
                 setUploadProgress(Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100));
               },
-              (error) => reject(error),
+              (error) => {
+                clearTimeout(timer);
+                reject(error);
+              },
               () => {
-                getDownloadURL(uploadTask.snapshot.ref).then(resolve);
+                clearTimeout(timer);
+                getDownloadURL(uploadTask.snapshot.ref).then(resolve).catch(reject);
               }
             );
           });
           finalPhotoUrl = downloadUrl;
         } catch (uploadError: any) {
-          console.error('Photo upload error or timeout, falling back to local Base64 WebP:', uploadError);
+          console.warn('Photo upload error or timeout, falling back to local Base64 WebP:', uploadError.message);
           setIsFallback(true);
           setUploadProgress(50);
           try {
