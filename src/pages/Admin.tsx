@@ -4,7 +4,9 @@ import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { db } from '@/services/firebase';
-import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy, limit } from 'firebase/firestore';
+import { FiEye, FiEyeOff } from 'react-icons/fi';
+import { logActivity } from '@/lib/logger';
 
 const ADMIN_EMAILS = ['ahmadi67000@gmail.com'];
 
@@ -16,11 +18,21 @@ interface AllowedUser {
   createdAt?: any;
 }
 
+interface ActivityLog {
+  id: string;
+  action: string;
+  details: string;
+  user: string;
+  timestamp: any;
+}
+
 export function Admin() {
   const { currentUser } = useAuth();
   
   const [users, setUsers] = useState<AllowedUser[]>([]);
+  const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
   
   const [formData, setFormData] = useState({
     emailOrUsername: '',
@@ -37,6 +49,7 @@ export function Admin() {
   useEffect(() => {
     if (isAdmin) {
       loadUsers();
+      loadLogs();
     }
   }, [isAdmin]);
 
@@ -51,6 +64,17 @@ export function Admin() {
       console.error("Error loading users:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadLogs = async () => {
+    try {
+      const q = query(collection(db, 'activity_logs'), orderBy('timestamp', 'desc'), limit(20));
+      const snapshot = await getDocs(q);
+      const loaded = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as ActivityLog[];
+      setLogs(loaded);
+    } catch (err) {
+      console.error("Error loading logs:", err);
     }
   };
 
@@ -80,9 +104,12 @@ export function Admin() {
         createdAt: serverTimestamp()
       });
       
+      logActivity('AJOUT_MEMBRE', `Création du compte membre ${formData.emailOrUsername}`, currentUser?.email || 'Inconnu');
+      
       setSuccess("Accès membre créé avec succès.");
       setFormData({ emailOrUsername: '', password: '', displayName: '' });
       loadUsers();
+      loadLogs();
     } catch (err: any) {
       setError(err.message || "Une erreur est survenue.");
     } finally {
@@ -90,11 +117,13 @@ export function Admin() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, emailOrUsername: string) => {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer cet accès ?")) {
       try {
         await deleteDoc(doc(db, 'allowed_users', id));
+        logActivity('SUPPRESSION_MEMBRE', `Suppression du compte membre ${emailOrUsername}`, currentUser?.email || 'Inconnu');
         setUsers(prev => prev.filter(u => u.id !== id));
+        loadLogs();
       } catch (err) {
         console.error("Error deleting user:", err);
       }
@@ -200,15 +229,53 @@ export function Admin() {
                     <div>
                       <div className="font-semibold text-text-primary">{user.displayName}</div>
                       <div className="text-sm text-text-secondary mt-1">Identifiant : {user.emailOrUsername}</div>
+                      <div className="text-sm text-text-secondary mt-1 flex items-center gap-2">
+                        <span>Mot de passe : <span className="font-mono bg-accent/5 px-1 py-0.5 rounded">{visiblePasswords[user.id] ? user.password : '••••••••'}</span></span>
+                        <button 
+                          onClick={() => setVisiblePasswords(prev => ({ ...prev, [user.id]: !prev[user.id] }))}
+                          className="text-text-tertiary hover:text-text-primary transition-colors focus:outline-none"
+                          title={visiblePasswords[user.id] ? "Masquer" : "Afficher"}
+                        >
+                          {visiblePasswords[user.id] ? <FiEyeOff size={14} /> : <FiEye size={14} />}
+                        </button>
+                      </div>
                     </div>
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => handleDelete(user.id)}
+                      onClick={() => handleDelete(user.id, user.emailOrUsername)}
                       className="text-red-500 hover:bg-red-50 hover:text-red-600 border-red-200"
                     >
                       Supprimer
                     </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          <Card className="p-0 overflow-hidden mt-8">
+            <div className="p-6 border-b border-border">
+              <h2 className="text-xl font-semibold">Journal d'activité récent (Logs)</h2>
+            </div>
+            {logs.length === 0 ? (
+              <div className="p-8 text-center text-text-secondary">Aucune activité récente.</div>
+            ) : (
+              <div className="divide-y divide-border">
+                {logs.map(log => (
+                  <div key={log.id} className="p-6 flex flex-col sm:flex-row gap-4 sm:items-center hover:bg-surface transition-colors">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="px-2 py-0.5 rounded text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
+                          {log.action}
+                        </span>
+                        <span className="text-sm font-medium text-text-primary">{log.user}</span>
+                      </div>
+                      <p className="text-sm text-text-secondary">{log.details}</p>
+                    </div>
+                    <div className="text-xs text-text-tertiary whitespace-nowrap">
+                      {log.timestamp ? new Date(log.timestamp.toDate()).toLocaleString('fr-FR') : 'À l\'instant'}
+                    </div>
                   </div>
                 ))}
               </div>

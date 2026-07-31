@@ -10,8 +10,11 @@ import { getInitials, formatPersonAge } from '@/lib/utils';
 import { FiArrowLeft, FiUser, FiHeart, FiUsers, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { Person } from '@/types';
 import { usePersons } from '@/hooks/usePersons';
+import { useAuth } from '@/hooks/useAuth';
+import { logActivity } from '@/lib/logger';
 
 export function PersonDetail() {
+  const { currentUser } = useAuth();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { persons } = usePersons();
@@ -53,6 +56,7 @@ export function PersonDetail() {
       }
 
       await deleteDoc(doc(db, COLLECTIONS.PERSONS, id));
+      logActivity('SUPPRESSION_PERSONNE', `Suppression de ${person.firstName} ${person.lastName}`, currentUser?.email || currentUser?.displayName || 'Inconnu');
       navigate('/tree');
     } catch (error) {
       console.error('Error deleting person:', error);

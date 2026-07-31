@@ -12,6 +12,8 @@ import { Gender, Person } from '@/types';
 import { compressAndResizeImage, blobToDataURL } from '@/lib/imageOptimizer';
 import { toShamsiDateString, toMiladiDateString } from '@/lib/calendarUtils';
 import { FiUpload, FiImage, FiX, FiCalendar } from 'react-icons/fi';
+import { useAuth } from '@/hooks/useAuth';
+import { logActivity } from '@/lib/logger';
 
 const JALALI_MONTHS = [
   "Farvardin", "Ordibehesht", "Khordad",
@@ -239,6 +241,7 @@ function PersonAutocomplete({
 }
 
 export function AddPerson() {
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEditing = Boolean(id);
@@ -423,11 +426,13 @@ export function AddPerson() {
       if (isEditing && id) {
         const docRef = doc(db, COLLECTIONS.PERSONS, id);
         await updateDoc(docRef, payload);
+        logActivity('MODIFICATION_PERSONNE', `Modification de ${formData.firstName} ${formData.lastName}`, currentUser?.email || currentUser?.displayName || 'Inconnu');
       } else {
         await addDoc(collection(db, COLLECTIONS.PERSONS), {
           ...payload,
           createdAt: serverTimestamp(),
         });
+        logActivity('AJOUT_PERSONNE', `Ajout de ${formData.firstName} ${formData.lastName}`, currentUser?.email || currentUser?.displayName || 'Inconnu');
       }
       // Navigate back to the tree view after successful save
       navigate('/tree');

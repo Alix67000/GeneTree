@@ -6,13 +6,12 @@ import {
   signOut, 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
-  signInAnonymously,
-  updateProfile,
   User as FirebaseUser 
 } from 'firebase/auth';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '@/services/firebase';
 import { AuthContextType } from '@/types';
+import { logActivity } from '@/lib/logger';
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -21,9 +20,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check for custom session first
+    const sessionStr = localStorage.getItem('genetree_member_session');
+    if (sessionStr) {
+      try {
+        const customSession = JSON.parse(sessionStr);
+        setCurrentUser(customSession as unknown as FirebaseUser);
+        setLoading(false);
+      } catch (err) {
+        console.error('Failed to parse custom session', err);
+        localStorage.removeItem('genetree_member_session');
+      }
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setLoading(false);
+      // Only set Firebase user if there's no custom session
+      if (!localStorage.getItem('genetree_member_session')) {
+        setCurrentUser(user);
+        setLoading(false);
+      }
     });
     return unsubscribe;
   }, []);
@@ -33,47 +48,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return signInWithPopup(auth, provider);
   };
 
-  const loginWithEmail = async (email: string, password: string) => {
+  const loginWithEmail = async (identifier: string, password: string) => {
     try {
-      return await signInWithEmailAndPassword(auth, email, password);
-    } catch (error: any) {
-      if (
-        error.code === 'auth/invalid-credential' || 
-        error.code === 'auth/user-not-found' || 
-        error.code === 'auth/wrong-password' || 
-        error.code === 'auth/invalid-email'
-      ) {
-        // Fallback: check allowed_users collection
-        try {
-          const usersRef = collection(db, 'allowed_users');
-          const q = query(usersRef, where('emailOrUsername', '==', email), where('password', '==', password));
-          const snapshot = await getDocs(q);
-          
-          if (!snapshot.empty) {
-            const userData = snapshot.docs[0].data();
-            const result = await signInAnonymously(auth);
-            
-            if (userData.displayName && result.user) {
-              await updateProfile(result.user, {
-                displayName: userData.displayName
-              });
-            }
-            
-            return result;
-          }
-        } catch (dbError) {
-          console.error('Error checking allowed_users', dbError);
-        }
+      const usersRef = collection(db, 'allowed_users');
+      // Firebase doesn't support case-insensitive queries natively like this, but we'll try exact match first
+      const q = query(usersRef, where('emailOrUsername', '==', identifier), where('password', '==', password));
+      const snapshot = await getDocs(q);
+      
+      if (!snapshot.empty) {
+        const doc = snapshot.docs[0];
+        const userData = doc.data();
+        
+        const customUser = { 
+          uid: doc.id, 
+          email: userData.emailOrUsername, 
+          displayName: userData.displayName || identifier, 
+          isAdmin: false 
+        };
+
+        localStorage.setItem('genetree_member_session', JSON.stringify(customUser));
+        setCurrentUser(customUser as unknown as FirebaseUser);
+        
+        logActivity('CONNEXION', `Connexion du membre ${userData.emailOrUsername}`, userData.emailOrUsername);
+        
+        return customUser;
       }
-      throw error;
+    } catch (dbError) {
+      console.error('Error checking allowed_users', dbError);
     }
+
+    // Fall back to Firebase Auth
+    const result = await signInWithEmailAndPassword(auth, identifier, password);
+    logActivity('CONNEXION', `Connexion de l'administrateur ${result.user.email}`, result.user.email || 'inconnu');
+    return result;
   };
 
   const registerWithEmail = (email: string, password: string) => {
     return createUserWithEmailAndPassword(auth, email, password);
   };
 
-  const logout = () => {
+  const logout = async () => {
+    localStorage.removeItem('genetree_member_session');
+    setCurrentUser(null);
     return signOut(auth);
   };
 
