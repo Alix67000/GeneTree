@@ -359,67 +359,46 @@ export function Tree() {
   };
 
   // Touch Handling for Panning & Pinch-to-Zoom
-  const touchStartDist = useRef<number | null>(null);
-  const touchStartCenter = useRef<{ x: number; y: number } | null>(null);
-  const lastTouchPos = useRef<{ x: number; y: number } | null>(null);
+  const touchStartDistRef = useRef<number | null>(null);
+  const touchStartScaleRef = useRef<number>(1);
+  const dragStartRef = useRef({ x: 0, y: 0 });
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 1) {
       setIsDragging(true);
-      lastTouchPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      dragStartRef.current = { x: e.touches[0].clientX - transform.x, y: e.touches[0].clientY - transform.y };
       setDragStartPos({ x: e.touches[0].clientX, y: e.touches[0].clientY });
     } else if (e.touches.length === 2) {
       setIsDragging(false);
       const dx = e.touches[0].clientX - e.touches[1].clientX;
       const dy = e.touches[0].clientY - e.touches[1].clientY;
-      touchStartDist.current = Math.sqrt(dx * dx + dy * dy);
-      touchStartCenter.current = {
-        x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
-        y: (e.touches[0].clientY + e.touches[1].clientY) / 2
-      };
+      touchStartDistRef.current = Math.hypot(dx, dy);
+      touchStartScaleRef.current = transform.scale;
     }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length === 1 && isDragging && lastTouchPos.current) {
-      const dx = e.touches[0].clientX - lastTouchPos.current.x;
-      const dy = e.touches[0].clientY - lastTouchPos.current.y;
-      lastTouchPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    if (e.touches.length === 1 && isDragging) {
       setTransform(prev => ({
         ...prev,
-        x: prev.x + dx,
-        y: prev.y + dy
+        x: e.touches[0].clientX - dragStartRef.current.x,
+        y: e.touches[0].clientY - dragStartRef.current.y
       }));
-    } else if (e.touches.length === 2 && touchStartDist.current !== null && containerRef.current) {
+    } else if (e.touches.length === 2 && touchStartDistRef.current !== null) {
       const dx = e.touches[0].clientX - e.touches[1].clientX;
       const dy = e.touches[0].clientY - e.touches[1].clientY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const factor = dist / touchStartDist.current;
-      touchStartDist.current = dist;
-
+      const newDist = Math.hypot(dx, dy);
+      
       setTransform(prev => {
-        const newScale = Math.min(Math.max(0.2, prev.scale * factor), 2.5);
-        const rect = containerRef.current!.getBoundingClientRect();
-        const center = touchStartCenter.current || { x: rect.width / 2, y: rect.height / 2 };
-        const mouseX = center.x - rect.left;
-        const mouseY = center.y - rect.top;
-
-        const targetX = (mouseX - prev.x) / prev.scale;
-        const targetY = (mouseY - prev.y) / prev.scale;
-
-        const newX = mouseX - targetX * newScale;
-        const newY = mouseY - targetY * newScale;
-
-        return { x: newX, y: newY, scale: newScale };
+        const newScale = Math.min(Math.max(touchStartScaleRef.current * (newDist / touchStartDistRef.current!), 0.3), 2.5);
+        return { ...prev, scale: newScale };
       });
     }
   };
 
   const handleTouchEnd = () => {
     setIsDragging(false);
-    touchStartDist.current = null;
-    touchStartCenter.current = null;
-    lastTouchPos.current = null;
+    touchStartDistRef.current = null;
   };
 
   if (loading) {
@@ -621,6 +600,7 @@ export function Tree() {
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchEnd}
           >
             <style>{`
               @keyframes flowDash {

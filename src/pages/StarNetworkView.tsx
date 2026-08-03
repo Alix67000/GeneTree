@@ -155,6 +155,43 @@ export function StarNetworkView() {
 
   const handleMouseUp = () => setIsDragging(false);
 
+  const touchStartDistRef = useRef<number | null>(null);
+  const touchStartScaleRef = useRef<number>(1);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      setIsDragging(true);
+      dragStartRef.current = { x: e.touches[0].clientX - transform.x, y: e.touches[0].clientY - transform.y };
+    } else if (e.touches.length === 2) {
+      setIsDragging(false);
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      touchStartDistRef.current = Math.hypot(dx, dy);
+      touchStartScaleRef.current = transform.scale;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 1 && isDragging) {
+      setTransform(prev => ({
+        ...prev,
+        x: e.touches[0].clientX - dragStartRef.current.x,
+        y: e.touches[0].clientY - dragStartRef.current.y,
+      }));
+    } else if (e.touches.length === 2 && touchStartDistRef.current) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const newDist = Math.hypot(dx, dy);
+      const newScale = Math.min(Math.max(touchStartScaleRef.current * (newDist / touchStartDistRef.current), 0.2), 2.5);
+      setTransform(prev => ({ ...prev, scale: newScale }));
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    touchStartDistRef.current = null;
+  };
+
   const handleZoom = (delta: number) => {
     setTransform(prev => ({
       ...prev,
@@ -201,6 +238,10 @@ export function StarNetworkView() {
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
       >
         {persons.length === 0 ? (
           <div className="absolute inset-0 flex items-center justify-center text-text-secondary text-sm">

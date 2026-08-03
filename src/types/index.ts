@@ -7,6 +7,7 @@ export interface Person {
   familyId: string;
   firstName: string;
   lastName: string;
+  maidenName?: string;
   gender?: Gender;
   birthDate?: string;
   birthDateShamsi?: string;
