@@ -125,3 +125,109 @@ export function getExtendedRelatives(centerId: string, persons: Person[]): Exten
 
   return relatives;
 }
+
+export interface KinshipStep {
+  person: Person;
+  relationType: string;
+}
+
+export interface KinshipPathResult {
+  steps: KinshipStep[];
+  title: string;
+}
+
+export function findKinshipPath(sourceId: string, targetId: string, persons: Person[]): KinshipPathResult | null {
+  if (sourceId === targetId) {
+    const p = persons.find(x => x.id === sourceId);
+    return p ? { steps: [{ person: p, relationType: 'Départ' }], title: 'Moi-même' } : null;
+  }
+
+  const graph = new Map<string, { to: string; type: EdgeType; gender?: Gender }[]>();
+
+  const addEdge = (from: string, to: string, type: EdgeType, gender?: Gender) => {
+    if (!graph.has(from)) graph.set(from, []);
+    if (!graph.get(from)!.find(e => e.to === to && e.type === type)) {
+      graph.get(from)!.push({ to, type, gender });
+    }
+  };
+
+  persons.forEach(p => {
+    if (p.parentId1) {
+      const parent1 = persons.find(x => x.id === p.parentId1);
+      addEdge(p.id, p.parentId1, 'U', parent1?.gender);
+      addEdge(p.parentId1, p.id, 'D', p.gender);
+    }
+    if (p.parentId2) {
+      const parent2 = persons.find(x => x.id === p.parentId2);
+      addEdge(p.id, p.parentId2, 'U', parent2?.gender);
+      addEdge(p.parentId2, p.id, 'D', p.gender);
+    }
+    if (p.spouseId) {
+      const spouse = persons.find(x => x.id === p.spouseId);
+      addEdge(p.id, p.spouseId, 'S', spouse?.gender);
+      addEdge(p.spouseId, p.id, 'S', p.gender);
+    }
+    const spouses = persons.filter(x => x.spouseId === p.id);
+    spouses.forEach(s => {
+      addEdge(p.id, s.id, 'S', s.gender);
+      addEdge(s.id, p.id, 'S', p.gender);
+    });
+  });
+
+  const visited = new Set<string>();
+  const queue: { id: string; edgeTypes: EdgeType[]; nodeIds: string[]; firstParentGender?: Gender }[] = [];
+
+  visited.add(sourceId);
+  queue.push({ id: sourceId, edgeTypes: [], nodeIds: [sourceId] });
+
+  let foundPath: { edgeTypes: EdgeType[]; nodeIds: string[]; firstParentGender?: Gender } | null = null;
+
+  while (queue.length > 0) {
+    const { id, edgeTypes, nodeIds, firstParentGender } = queue.shift()!;
+
+    if (id === targetId) {
+      foundPath = { edgeTypes, nodeIds, firstParentGender };
+      break;
+    }
+
+    const neighbors = graph.get(id) || [];
+    for (const edge of neighbors) {
+      if (!visited.has(edge.to)) {
+        visited.add(edge.to);
+        const newEdgeTypes = [...edgeTypes, edge.type];
+        const newNodeIds = [...nodeIds, edge.to];
+        let newFirstParentGender = firstParentGender;
+        if (edgeTypes.length === 0 && edge.type === 'U') {
+          newFirstParentGender = edge.gender;
+        }
+        queue.push({ id: edge.to, edgeTypes: newEdgeTypes, nodeIds: newNodeIds, firstParentGender: newFirstParentGender });
+      }
+    }
+  }
+
+  if (!foundPath) return null;
+
+  const targetPerson = persons.find(p => p.id === targetId);
+  const title = getRelationshipTitle(foundPath.edgeTypes, targetPerson?.gender, foundPath.firstParentGender);
+
+  const steps: KinshipStep[] = foundPath.nodeIds.map((id, index) => {
+    const p = persons.find(x => x.id === id)!;
+    if (index === 0) {
+      return { person: p, relationType: 'Départ' };
+    }
+    const edgeType = foundPath!.edgeTypes[index - 1];
+    let relationType = 'Parent';
+    
+    if (edgeType === 'U') {
+      relationType = p.gender === 'male' ? 'Père' : p.gender === 'female' ? 'Mère' : 'Parent';
+    } else if (edgeType === 'D') {
+      relationType = p.gender === 'male' ? 'Fils' : p.gender === 'female' ? 'Fille' : 'Enfant';
+    } else if (edgeType === 'S') {
+      relationType = p.gender === 'male' ? 'Époux' : p.gender === 'female' ? 'Épouse' : 'Conjoint';
+    }
+    
+    return { person: p, relationType };
+  });
+
+  return { steps, title };
+}

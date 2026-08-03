@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { FiGitCommit, FiImage, FiClock, FiUser, FiSettings, FiSun } from 'react-icons/fi';
+import { FiGitCommit, FiImage, FiClock, FiUser, FiSettings, FiSun, FiMapPin } from 'react-icons/fi';
 import { useAuth } from '@/hooks/useAuth';
 
 const ADMIN_EMAILS = ['ahmadi67000@gmail.com'];
@@ -35,6 +35,14 @@ export function BottomNav() {
       >
         <FiSun size={20} className="mb-1" />
         <span>Solaire</span>
+      </NavLink>
+
+      <NavLink 
+        to="/pathfinder" 
+        className={({ isActive }) => `flex flex-col items-center justify-center flex-1 h-full text-xs font-medium transition-colors ${isActive ? 'text-primary' : 'text-text-secondary hover:text-text-primary'}`}
+      >
+        <FiMapPin size={20} className="mb-1" />
+        <span>Chemin</span>
       </NavLink>
 
       <NavLink 
