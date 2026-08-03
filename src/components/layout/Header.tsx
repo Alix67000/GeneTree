@@ -77,8 +77,8 @@ export function Header() {
           <>
             <div className="hidden md:flex items-center gap-5 text-[13px] font-semibold text-text-secondary">
               <NavLink to="/tree" className={({isActive}) => isActive ? "text-primary border-b-2 border-primary pb-1" : "hover:text-primary transition-colors"}>Family Tree</NavLink>
-              <NavLink to="/network" className={({isActive}) => isActive ? "text-primary border-b-2 border-primary pb-1" : "hover:text-primary transition-colors"}>Réseau étendu</NavLink>
               <NavLink to="/photos" className={({isActive}) => isActive ? "text-primary border-b-2 border-primary pb-1" : "hover:text-primary transition-colors"}>Gallery</NavLink>
+              <NavLink to="/network" className={({isActive}) => isActive ? "text-primary border-b-2 border-primary pb-1" : "hover:text-primary transition-colors"}>Système Solaire</NavLink>
               <NavLink to="/timeline" className={({isActive}) => isActive ? "text-primary border-b-2 border-primary pb-1" : "hover:text-primary transition-colors"}>Timeline</NavLink>
               <NavLink to="/about" className={({isActive}) => isActive ? "text-primary border-b-2 border-primary pb-1" : "hover:text-primary transition-colors"}>About</NavLink>
               {currentUser.email === 'ahmadi67000@gmail.com' && (

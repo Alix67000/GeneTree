@@ -3,23 +3,17 @@ import { usePersons } from '@/hooks/usePersons';
 import { getExtendedRelatives } from '@/lib/kinship';
 import { Person } from '@/types';
 import { getInitials } from '@/lib/utils';
-import * as d3 from 'd3';
 import { FiZoomIn, FiZoomOut, FiMaximize } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 
-interface GraphNode extends d3.SimulationNodeDatum {
+interface RadialNode {
   id: string;
   person: Person;
   title: string;
   isCenter: boolean;
-  x?: number;
-  y?: number;
-}
-
-interface GraphLink {
-  source: string;
-  target: string;
-  type: string;
+  ring: number;
+  x: number;
+  y: number;
 }
 
 export function NetworkView() {
@@ -34,69 +28,63 @@ export function NetworkView() {
     return persons.length > 0 ? persons[0].id : null;
   }, [centerId, persons]);
 
-  const { nodes, links } = useMemo(() => {
-    if (!activeCenterId || persons.length === 0) return { nodes: [], links: [] };
+  const { nodes, links, rings } = useMemo(() => {
+    if (!activeCenterId || persons.length === 0) return { nodes: [], links: [], rings: [] };
 
     const centerPerson = persons.find(p => p.id === activeCenterId);
-    if (!centerPerson) return { nodes: [], links: [] };
+    if (!centerPerson) return { nodes: [], links: [], rings: [] };
 
     const relatives = getExtendedRelatives(activeCenterId, persons);
-    const nMap = new Map<string, GraphNode>();
 
-    nMap.set(activeCenterId, {
-      id: activeCenterId,
-      person: centerPerson,
-      title: 'Moi (Centre)',
-      isCenter: true,
-      x: 0,
-      y: 0,
+    // Group relatives by ring distance
+    const ringGroups = new Map<number, typeof relatives>();
+    relatives.forEach(r => {
+      const ring = Math.min(Math.max(r.distance, 1), 3); // Ring 1, 2, or 3
+      if (!ringGroups.has(ring)) ringGroups.set(ring, []);
+      ringGroups.get(ring)!.push(r);
     });
 
-    relatives.forEach(r => {
-      nMap.set(r.person.id, {
-        id: r.person.id,
-        person: r.person,
-        title: r.relationshipTitle,
-        isCenter: false,
+    const RADIUS_MAP: Record<number, number> = { 1: 200, 2: 360, 3: 520 };
+    const nList: RadialNode[] = [
+      {
+        id: activeCenterId,
+        person: centerPerson,
+        title: 'Moi (Centre)',
+        isCenter: true,
+        ring: 0,
+        x: 0,
+        y: 0,
+      }
+    ];
+
+    ringGroups.forEach((group, ringNum) => {
+      const radius = RADIUS_MAP[ringNum] || 520;
+      const total = group.length;
+      group.forEach((r, idx) => {
+        const angle = (idx / total) * 2 * Math.PI - Math.PI / 2; // start from top
+        nList.push({
+          id: r.person.id,
+          person: r.person,
+          title: r.relationshipTitle,
+          isCenter: false,
+          ring: ringNum,
+          x: Math.round(radius * Math.cos(angle)),
+          y: Math.round(radius * Math.sin(angle)),
+        });
       });
     });
 
-    const l: GraphLink[] = [];
-    const relativeIds = new Set(nMap.keys());
+    const lList = nList.filter(n => !n.isCenter).map(n => ({
+      source: activeCenterId,
+      target: n.id,
+      ring: n.ring,
+    }));
 
-    persons.forEach(p => {
-      if (!relativeIds.has(p.id)) return;
-      if (p.parentId1 && relativeIds.has(p.parentId1)) {
-        l.push({ source: p.id, target: p.parentId1, type: 'U' });
-      }
-      if (p.parentId2 && relativeIds.has(p.parentId2)) {
-        l.push({ source: p.id, target: p.parentId2, type: 'U' });
-      }
-      if (p.spouseId && relativeIds.has(p.spouseId)) {
-        const exists = l.some(link =>
-          (link.source === p.id && link.target === p.spouseId) ||
-          (link.source === p.spouseId && link.target === p.id)
-        );
-        if (!exists) {
-          l.push({ source: p.id, target: p.spouseId, type: 'S' });
-        }
-      }
-    });
-
-    const nodeArray = Array.from(nMap.values());
-    const d3Links = l.map(link => ({ source: link.source, target: link.target, type: link.type }));
-
-    const simulation = d3.forceSimulation(nodeArray)
-      .force("link", d3.forceLink(d3Links).id((d: any) => d.id).distance(220))
-      .force("charge", d3.forceManyBody().strength(-1400))
-      .force("collision", d3.forceCollide().radius(110))
-      .stop();
-
-    for (let i = 0; i < 300; ++i) {
-      simulation.tick();
-    }
-
-    return { nodes: nodeArray, links: l };
+    return {
+      nodes: nList,
+      links: lList,
+      rings: [200, 360, 520],
+    };
   }, [activeCenterId, persons]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -129,8 +117,8 @@ export function NetworkView() {
     <div className="flex flex-col h-[calc(100vh-4rem)] bg-background">
       <div className="p-4 border-b border-border bg-surface flex flex-col sm:flex-row gap-4 justify-between items-center z-10 shadow-sm">
         <div>
-          <h2 className="text-xl font-display font-bold text-text-primary">Réseau de Parenté Étendu</h2>
-          <p className="text-xs text-text-secondary">Explorez tous les liens (cousins, oncles, aïeux) autour d'une personne</p>
+          <h2 className="text-xl font-display font-bold text-text-primary">Système Solaire de Parenté</h2>
+          <p className="text-xs text-text-secondary">Anneaux concentriques : Proches (Anneau 1) à Éloignés (Anneau 3)</p>
         </div>
         <div className="flex items-center gap-2">
           <select
@@ -164,14 +152,27 @@ export function NetworkView() {
             }}
           >
             <svg className="absolute inset-0 w-full h-full overflow-visible pointer-events-none">
+              {rings.map((r, idx) => (
+                <circle
+                  key={idx}
+                  cx={window.innerWidth / 2}
+                  cy={window.innerHeight / 2}
+                  r={r}
+                  fill="none"
+                  stroke="#cbd5e1"
+                  strokeWidth="1.5"
+                  strokeDasharray="6,6"
+                />
+              ))}
+
               {links.map((link, idx) => {
-                const sourceNode = nodes.find(n => n.id === (typeof link.source === 'object' ? (link.source as any).id : link.source));
-                const targetNode = nodes.find(n => n.id === (typeof link.target === 'object' ? (link.target as any).id : link.target));
+                const sourceNode = nodes.find(n => n.id === link.source);
+                const targetNode = nodes.find(n => n.id === link.target);
                 if (!sourceNode || !targetNode) return null;
-                const sx = (sourceNode.x || 0) + window.innerWidth / 2;
-                const sy = (sourceNode.y || 0) + window.innerHeight / 2;
-                const tx = (targetNode.x || 0) + window.innerWidth / 2;
-                const ty = (targetNode.y || 0) + window.innerHeight / 2;
+                const sx = sourceNode.x + window.innerWidth / 2;
+                const sy = sourceNode.y + window.innerHeight / 2;
+                const tx = targetNode.x + window.innerWidth / 2;
+                const ty = targetNode.y + window.innerHeight / 2;
 
                 return (
                   <line
@@ -180,46 +181,51 @@ export function NetworkView() {
                     y1={sy}
                     x2={tx}
                     y2={ty}
-                    stroke={link.type === 'S' ? '#f43f5e' : '#94a3b8'}
-                    strokeWidth={link.type === 'S' ? 3 : 2}
-                    strokeDasharray={link.type === 'S' ? '6,6' : 'none'}
-                    strokeOpacity={0.7}
+                    stroke="#94a3b8"
+                    strokeWidth="1.5"
+                    strokeOpacity={0.5}
                   />
                 );
               })}
             </svg>
 
             {nodes.map(node => {
-              const left = (node.x || 0) + window.innerWidth / 2 - 80;
-              const top = (node.y || 0) + window.innerHeight / 2 - 70;
-              const badgeColor = node.isCenter ? 'bg-primary text-white' : 'bg-slate-200 text-slate-700';
+              const left = node.x + window.innerWidth / 2 - 75;
+              const top = node.y + window.innerHeight / 2 - 65;
+              const badgeColor = node.isCenter
+                ? 'bg-primary text-white'
+                : node.ring === 1
+                ? 'bg-emerald-600 text-white'
+                : node.ring === 2
+                ? 'bg-amber-600 text-white'
+                : 'bg-slate-600 text-white';
 
               return (
                 <div
                   key={node.id}
                   onClick={() => setCenterId(node.id)}
                   style={{ left, top }}
-                  className={`node-card absolute w-[160px] p-3 bg-white rounded-xl border-2 shadow-md hover:shadow-lg transition-all cursor-pointer flex flex-col items-center text-center ${
-                    node.isCenter ? 'border-primary ring-4 ring-primary/20 scale-105 z-20' : 'border-border z-10'
+                  className={`node-card absolute w-[150px] p-2.5 bg-white rounded-xl border-2 shadow-md hover:shadow-lg transition-all cursor-pointer flex flex-col items-center text-center ${
+                    node.isCenter ? 'border-primary ring-4 ring-primary/30 scale-110 z-30' : 'border-border z-10'
                   }`}
                 >
-                  <div className={`absolute -top-3 px-3 py-0.5 rounded-full text-[10px] font-bold shadow-sm ${badgeColor}`}>
+                  <div className={`absolute -top-3 px-2.5 py-0.5 rounded-full text-[9px] font-bold shadow-sm ${badgeColor}`}>
                     {node.title}
                   </div>
-                  <div className="w-14 h-14 rounded-full border-2 border-accent bg-border shadow flex items-center justify-center text-sm font-display font-semibold text-text-primary overflow-hidden mt-2">
+                  <div className="w-12 h-12 rounded-full border-2 border-accent bg-border shadow flex items-center justify-center text-xs font-display font-semibold text-text-primary overflow-hidden mt-1.5">
                     {node.person.photoUrl ? (
                       <img src={node.person.photoUrl} alt="" className="w-full h-full object-cover" />
                     ) : (
                       getInitials(node.person.firstName, node.person.lastName)
                     )}
                   </div>
-                  <h4 className="font-display font-bold text-xs text-text-primary mt-2 truncate w-full">
+                  <h4 className="font-display font-bold text-[11px] text-text-primary mt-1.5 truncate w-full">
                     {node.person.firstName} {node.person.lastName}
                   </h4>
                   <Link
                     to={`/person/${node.id}`}
                     onClick={(e) => e.stopPropagation()}
-                    className="mt-2 text-[10px] bg-primary text-white px-2 py-0.5 rounded hover:bg-primary/90"
+                    className="mt-1.5 text-[9px] bg-primary text-white px-2 py-0.5 rounded hover:bg-primary/90"
                   >
                     Fiche
                   </Link>
