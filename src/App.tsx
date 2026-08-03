@@ -9,6 +9,8 @@ import { Photos } from '@/pages/Photos';
 import { Timeline } from '@/pages/Timeline';
 import { NetworkView } from '@/pages/NetworkView';
 import { PathfinderView } from '@/pages/PathfinderView';
+import { PassportView } from '@/pages/PassportView';
+import { StarNetworkView } from '@/pages/StarNetworkView';
 import { Admin } from '@/pages/Admin';
 import { About } from '@/pages/About';
 import { useAuth } from '@/hooks/useAuth';
@@ -34,6 +36,8 @@ export function App() {
         <Route path="photos" element={<PrivateRoute><Photos /></PrivateRoute>} />
         <Route path="network" element={<PrivateRoute><NetworkView /></PrivateRoute>} />
         <Route path="pathfinder" element={<PrivateRoute><PathfinderView /></PrivateRoute>} />
+        <Route path="passport" element={<PrivateRoute><PassportView /></PrivateRoute>} />
+        <Route path="star-network" element={<PrivateRoute><StarNetworkView /></PrivateRoute>} />
         <Route path="timeline" element={<PrivateRoute><Timeline /></PrivateRoute>} />
         <Route path="admin" element={<PrivateRoute><Admin /></PrivateRoute>} />
       </Route>
