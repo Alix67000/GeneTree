@@ -72,9 +72,18 @@ export function FloatingPhotoGalaxy() {
   const lastMousePos = useRef({ x: 0, y: 0 });
   const animationFrame = useRef<number | null>(null);
 
-  const containerSize = 440;
-  const actualSphereRadius = 180;
-  const baseImageSize = containerSize * 0.16;
+  const [containerSize, setContainerSize] = useState(() => Math.min(window.innerWidth - 32, 440));
+
+  useEffect(() => {
+    const handleResize = () => {
+      setContainerSize(Math.min(window.innerWidth - 32, 460));
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const actualSphereRadius = Math.round(containerSize * 0.42);
+  const baseImageSize = Math.round(containerSize * 0.16);
   const maxRotationSpeed = 3;
   const dragSensitivity = 0.5;
   const momentumDecay = 0.95;
@@ -230,7 +239,7 @@ export function FloatingPhotoGalaxy() {
     <>
       <div
         ref={containerRef}
-        className="relative select-none cursor-grab active:cursor-grabbing mx-auto my-4 overflow-hidden"
+        className="relative select-none cursor-grab active:cursor-grabbing w-full max-w-md mx-auto aspect-square flex items-center justify-center overflow-hidden"
         style={{ width: containerSize, height: containerSize, perspective: '1000px' }}
         onMouseDown={handleMouseDown}
       >

@@ -270,10 +270,14 @@ export function AddPerson() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const size = Math.min(img.naturalWidth, img.naturalHeight);
-    const sSize = size / zoom;
-    const sX = (img.naturalWidth - sSize) / 2 - offset.x * (img.naturalWidth / img.width);
-    const sY = (img.naturalHeight - sSize) / 2 - offset.y * (img.naturalHeight / img.height);
+    // La dimension de référence dans object-cover est le côté le plus court
+    const minNaturalSize = Math.min(img.naturalWidth, img.naturalHeight);
+    const scaleRatio = minNaturalSize / 256; // 1 pixel écran (256x256) en pixels réels
+    const sSize = minNaturalSize / zoom;     // Taille réelle de la boîte de découpe
+
+    // Calcul du centre exact décalé par offset en tenant compte du zoom actuel
+    const sX = (img.naturalWidth - sSize) / 2 - (offset.x * scaleRatio) / zoom;
+    const sY = (img.naturalHeight - sSize) / 2 - (offset.y * scaleRatio) / zoom;
 
     ctx.clearRect(0, 0, 600, 600);
     ctx.drawImage(img, sX, sY, sSize, sSize, 0, 0, 600, 600);
