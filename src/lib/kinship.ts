@@ -20,35 +20,33 @@ function getRelationshipTitle(path: string[], endGender: Gender | undefined, fir
   const isM = endGender === 'male';
   const isF = endGender === 'female';
 
-  const suffix = firstParentGender === 'female' ? 'maternel(le)' : firstParentGender === 'male' ? 'paternel(le)' : '';
-  const suffixM = firstParentGender === 'female' ? 'maternel' : firstParentGender === 'male' ? 'paternel' : '';
-  const suffixF = firstParentGender === 'female' ? 'maternelle' : firstParentGender === 'male' ? 'paternelle' : '';
+  const suffix = firstParentGender === 'female' ? 'maternal' : firstParentGender === 'male' ? 'paternal' : '';
 
   const s = (str: string) => str.trim().replace(/ +/g, ' ');
 
   switch (pStr) {
-    case 'U': return isM ? 'Père' : isF ? 'Mère' : 'Parent';
-    case 'D': return isM ? 'Fils' : isF ? 'Fille' : 'Enfant';
-    case 'S': return isM ? 'Époux' : isF ? 'Épouse' : 'Conjoint(e)';
-    case 'U,D': return isM ? 'Frère' : isF ? 'Sœur' : 'Fratrie';
-    case 'U,U': return s(isM ? `Grand-père ${suffixM}` : isF ? `Grand-mère ${suffixF}` : `Grand-parent ${suffix}`);
-    case 'D,D': return isM ? 'Petit-fils' : isF ? 'Petite-fille' : 'Petit-enfant';
-    case 'U,U,D': return s(isM ? `Oncle ${suffixM}` : isF ? `Tante ${suffixF}` : `Oncle/Tante ${suffix}`);
-    case 'U,U,D,D': return s(isM ? `Cousin ${suffixM}` : isF ? `Cousine ${suffixF}` : `Cousin(e) ${suffix}`);
-    case 'U,D,D': return isM ? 'Neveu' : isF ? 'Nièce' : 'Neveu/Nièce';
-    case 'U,U,U': return isM ? `Arrière-grand-père` : isF ? `Arrière-grand-mère` : `Arrière-grand-parent`;
-    case 'D,D,D': return isM ? 'Arrière-petit-fils' : isF ? 'Arrière-petite-fille' : 'Arrière-petit-enfant';
-    case 'S,U': return isM ? 'Beau-père' : isF ? 'Belle-mère' : 'Beau-parent';
-    case 'S,D': return isM ? 'Beau-fils' : isF ? 'Belle-fille' : 'Beau-fils/fille';
-    case 'U,S': return isM ? 'Beau-père' : isF ? 'Belle-mère' : 'Beau-parent';
-    case 'S,U,D': return isM ? 'Beau-frère' : isF ? 'Belle-sœur' : 'Beau-frère/sœur';
-    case 'U,D,S': return isM ? 'Beau-frère' : isF ? 'Belle-sœur' : 'Beau-frère/sœur';
+    case 'U': return isM ? 'Father' : isF ? 'Mother' : 'Parent';
+    case 'D': return isM ? 'Son' : isF ? 'Daughter' : 'Child';
+    case 'S': return isM ? 'Husband' : isF ? 'Wife' : 'Spouse';
+    case 'U,D': return isM ? 'Brother' : isF ? 'Sister' : 'Sibling';
+    case 'U,U': return s(isM ? `${suffix} Grandfather` : isF ? `${suffix} Grandmother` : `${suffix} Grandparent`);
+    case 'D,D': return isM ? 'Grandson' : isF ? 'Granddaughter' : 'Grandchild';
+    case 'U,U,D': return s(isM ? `${suffix} Uncle` : isF ? `${suffix} Aunt` : `${suffix} Uncle/Aunt`);
+    case 'U,U,D,D': return s(isM ? `${suffix} Cousin` : isF ? `${suffix} Cousin` : `${suffix} Cousin`);
+    case 'U,D,D': return isM ? 'Nephew' : isF ? 'Niece' : 'Nephew/Niece';
+    case 'U,U,U': return isM ? `Great-grandfather` : isF ? `Great-grandmother` : `Great-grandparent`;
+    case 'D,D,D': return isM ? 'Great-grandson' : isF ? 'Great-granddaughter' : 'Great-grandchild';
+    case 'S,U': return isM ? 'Father-in-law' : isF ? 'Mother-in-law' : 'Parent-in-law';
+    case 'S,D': return isM ? 'Stepson' : isF ? 'Stepdaughter' : 'Stepchild';
+    case 'U,S': return isM ? 'Stepfather' : isF ? 'Stepmother' : 'Stepparent';
+    case 'S,U,D': return isM ? 'Brother-in-law' : isF ? 'Sister-in-law' : 'Sibling-in-law';
+    case 'U,D,S': return isM ? 'Brother-in-law' : isF ? 'Sister-in-law' : 'Sibling-in-law';
   }
 
-  if (path.every(p => p === 'U')) return 'Ancêtre';
+  if (path.every(p => p === 'U')) return 'Ancestor';
   if (path.every(p => p === 'D')) return 'Descendant';
 
-  return 'Parent éloigné';
+  return 'Distant relative';
 }
 
 export function getExtendedRelatives(centerId: string, persons: Person[]): ExtendedRelative[] {
@@ -139,7 +137,7 @@ export interface KinshipPathResult {
 export function findKinshipPath(sourceId: string, targetId: string, persons: Person[]): KinshipPathResult | null {
   if (sourceId === targetId) {
     const p = persons.find(x => x.id === sourceId);
-    return p ? { steps: [{ person: p, relationType: 'Départ' }], title: 'Moi-même' } : null;
+    return p ? { steps: [{ person: p, relationType: 'Start' }], title: 'Myself' } : null;
   }
 
   const graph = new Map<string, { to: string; type: EdgeType; gender?: Gender }[]>();
@@ -213,17 +211,17 @@ export function findKinshipPath(sourceId: string, targetId: string, persons: Per
   const steps: KinshipStep[] = foundPath.nodeIds.map((id, index) => {
     const p = persons.find(x => x.id === id)!;
     if (index === 0) {
-      return { person: p, relationType: 'Départ' };
+      return { person: p, relationType: 'Start' };
     }
     const edgeType = foundPath!.edgeTypes[index - 1];
     let relationType = 'Parent';
     
     if (edgeType === 'U') {
-      relationType = p.gender === 'male' ? 'Père' : p.gender === 'female' ? 'Mère' : 'Parent';
+      relationType = p.gender === 'male' ? 'Father' : p.gender === 'female' ? 'Mother' : 'Parent';
     } else if (edgeType === 'D') {
-      relationType = p.gender === 'male' ? 'Fils' : p.gender === 'female' ? 'Fille' : 'Enfant';
+      relationType = p.gender === 'male' ? 'Son' : p.gender === 'female' ? 'Daughter' : 'Child';
     } else if (edgeType === 'S') {
-      relationType = p.gender === 'male' ? 'Époux' : p.gender === 'female' ? 'Épouse' : 'Conjoint';
+      relationType = p.gender === 'male' ? 'Husband' : p.gender === 'female' ? 'Wife' : 'Spouse';
     }
     
     return { person: p, relationType };

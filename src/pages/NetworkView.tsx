@@ -49,7 +49,7 @@ export function NetworkView() {
       {
         id: activeCenterId,
         person: centerPerson,
-        title: 'Moi (Centre)',
+        title: 'Me (Center)',
         isCenter: true,
         ring: 0,
         x: 0,
@@ -121,6 +121,9 @@ export function NetworkView() {
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && e.cancelable) {
+      e.preventDefault();
+    }
     if (e.touches.length === 1 && isDragging) {
       setTransform(prev => ({
         ...prev,
@@ -154,8 +157,8 @@ export function NetworkView() {
     <div className="flex flex-col h-[calc(100vh-4rem)] bg-background">
       <div className="p-4 border-b border-border bg-surface flex flex-col sm:flex-row gap-4 justify-between items-center z-10 shadow-sm">
         <div>
-          <h2 className="text-xl font-display font-bold text-text-primary">Système Solaire de Parenté</h2>
-          <p className="text-xs text-text-secondary">Anneaux concentriques : Proches (Anneau 1) à Éloignés (Anneau 3)</p>
+          <h2 className="text-xl font-display font-bold text-text-primary">Solar Kinship Network</h2>
+          <p className="text-xs text-text-secondary">Concentric rings: Immediate (Ring 1) to Extended (Ring 3)</p>
         </div>
         <div className="flex items-center gap-2">
           <select
@@ -171,7 +174,7 @@ export function NetworkView() {
       </div>
 
       <div
-        className="flex-1 relative overflow-hidden bg-[#f8fafc] cursor-grab active:cursor-grabbing select-none"
+        className="flex-1 relative overflow-hidden bg-[#f8fafc] cursor-grab active:cursor-grabbing select-none touch-none"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -183,7 +186,7 @@ export function NetworkView() {
       >
         {persons.length === 0 ? (
           <div className="absolute inset-0 flex items-center justify-center text-text-secondary text-sm">
-            Aucun membre dans l'arbre.
+            No members found in the family tree.
           </div>
         ) : (
           <div
@@ -268,7 +271,7 @@ export function NetworkView() {
                     onClick={(e) => e.stopPropagation()}
                     className="mt-1.5 text-[9px] bg-primary text-white px-2 py-0.5 rounded hover:bg-primary/90"
                   >
-                    Fiche
+                    Profile
                   </Link>
                 </div>
               );

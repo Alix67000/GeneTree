@@ -378,21 +378,25 @@ export function Tree() {
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && e.cancelable) {
+      e.preventDefault();
+    }
     if (e.touches.length === 1 && isDragging) {
       setTransform(prev => ({
         ...prev,
         x: e.touches[0].clientX - dragStartRef.current.x,
         y: e.touches[0].clientY - dragStartRef.current.y
       }));
-    } else if (e.touches.length === 2 && touchStartDistRef.current !== null) {
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
-      const newDist = Math.hypot(dx, dy);
-      
-      setTransform(prev => {
-        const newScale = Math.min(Math.max(touchStartScaleRef.current * (newDist / touchStartDistRef.current!), 0.3), 2.5);
-        return { ...prev, scale: newScale };
-      });
+    } else if (e.touches.length === 2 && touchStartDistRef.current) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const scaleFactor = dist / touchStartDistRef.current;
+      setTransform(prev => ({
+        ...prev,
+        scale: Math.min(Math.max(touchStartScaleRef.current * scaleFactor, 0.3), 2.5),
+      }));
     }
   };
 
@@ -592,7 +596,7 @@ export function Tree() {
 
           <div 
             ref={containerRef}
-            className={`relative w-full h-[65vh] min-h-[500px] bg-slate-50 rounded-2xl border border-border shadow-inner overflow-hidden active:cursor-grabbing touch-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+            className={`relative w-full h-[65vh] min-h-[500px] bg-slate-50 rounded-2xl border border-border shadow-inner overflow-hidden active:cursor-grabbing touch-none select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}

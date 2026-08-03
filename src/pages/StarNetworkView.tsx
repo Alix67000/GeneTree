@@ -172,6 +172,9 @@ export function StarNetworkView() {
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && e.cancelable) {
+      e.preventDefault();
+    }
     if (e.touches.length === 1 && isDragging) {
       setTransform(prev => ({
         ...prev,
@@ -179,11 +182,15 @@ export function StarNetworkView() {
         y: e.touches[0].clientY - dragStartRef.current.y,
       }));
     } else if (e.touches.length === 2 && touchStartDistRef.current) {
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
-      const newDist = Math.hypot(dx, dy);
-      const newScale = Math.min(Math.max(touchStartScaleRef.current * (newDist / touchStartDistRef.current), 0.2), 2.5);
-      setTransform(prev => ({ ...prev, scale: newScale }));
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const scaleFactor = dist / touchStartDistRef.current;
+      setTransform(prev => ({
+        ...prev,
+        scale: Math.min(Math.max(touchStartScaleRef.current * scaleFactor, 0.2), 2.5),
+      }));
     }
   };
 
@@ -233,7 +240,7 @@ export function StarNetworkView() {
       </div>
 
       <div
-        className="flex-1 relative overflow-hidden bg-[#f8fafc] cursor-grab active:cursor-grabbing select-none"
+        className="flex-1 relative overflow-hidden bg-[#f8fafc] cursor-grab active:cursor-grabbing select-none touch-none"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
