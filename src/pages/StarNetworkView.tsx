@@ -4,6 +4,7 @@ import { Person } from '@/types';
 import { getInitials } from '@/lib/utils';
 import { FiZoomIn, FiZoomOut, FiMaximize } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
+import { renderGroupedPersonOptions } from '@/lib/personUtils';
 
 interface StarNode {
   id: string;
@@ -232,9 +233,7 @@ export function StarNetworkView() {
             onChange={(e) => setCenterId(e.target.value)}
             className="px-3 py-2 border border-border rounded-lg text-sm bg-background min-w-[220px]"
           >
-            {persons.map(p => (
-              <option key={p.id} value={p.id}>{p.firstName} {p.lastName}</option>
-            ))}
+            {renderGroupedPersonOptions(persons)}
           </select>
         </div>
       </div>
@@ -325,16 +324,16 @@ export function StarNetworkView() {
           </div>
         )}
 
-        <div className="zoom-toolbar absolute bottom-6 right-6 flex flex-col gap-1 bg-white p-1.5 rounded-xl shadow-lg border border-slate-200 z-30">
-          <button onClick={() => handleZoom(0.2)} className="p-2 hover:bg-slate-50 rounded-lg transition-colors" title="Zoom In">
-            <FiZoomIn className="w-4 h-4 text-slate-600" />
+        <div className="zoom-toolbar absolute bottom-24 right-4 sm:bottom-8 sm:right-8 flex flex-col gap-1.5 bg-white/95 backdrop-blur-sm p-1.5 rounded-2xl shadow-xl border border-slate-200 z-40">
+          <button onClick={() => handleZoom(0.2)} className="w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 active:bg-slate-200 transition-colors" title="Zoom In">
+            <FiZoomIn className="w-5 h-5 text-slate-700" />
           </button>
-          <button onClick={() => handleZoom(-0.2)} className="p-2 hover:bg-slate-50 rounded-lg transition-colors" title="Zoom Out">
-            <FiZoomOut className="w-4 h-4 text-slate-600" />
+          <button onClick={() => handleZoom(-0.2)} className="w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 active:bg-slate-200 transition-colors" title="Zoom Out">
+            <FiZoomOut className="w-5 h-5 text-slate-700" />
           </button>
           <div className="h-px bg-slate-200 my-0.5"></div>
-          <button onClick={handleResetZoom} className="p-2 hover:bg-slate-50 rounded-lg transition-colors" title="Reset">
-            <FiMaximize className="w-4 h-4 text-slate-600" />
+          <button onClick={handleResetZoom} className="w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 active:bg-slate-200 transition-colors" title="Reset">
+            <FiMaximize className="w-5 h-5 text-slate-700" />
           </button>
         </div>
       </div>

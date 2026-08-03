@@ -10,6 +10,7 @@ import {
   FiHeart, FiEye, FiArrowUp, FiArrowDown, FiDownload
 } from 'react-icons/fi';
 import { Person } from '@/types';
+import { renderGroupedPersonOptions } from '@/lib/personUtils';
 
 export function Tree() {
   const { persons, loading } = usePersons();
@@ -588,9 +589,7 @@ export function Tree() {
               onChange={(e) => handleSelectCentral(e.target.value)}
               className="w-full sm:w-auto flex-1 px-4 py-2 rounded-xl border border-border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
-              {persons.map(p => (
-                <option key={p.id} value={p.id}>{p.firstName} {p.lastName}</option>
-              ))}
+              {renderGroupedPersonOptions(persons)}
             </select>
           </div>
 
@@ -781,18 +780,15 @@ export function Tree() {
             </div>
 
             {/* Toolbar */}
-            <div className="absolute bottom-6 right-6 flex flex-col gap-1 bg-white/95 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-lg z-30">
-              <Button variant="ghost" size="sm" onClick={() => handleZoom(0.2)} className="h-10 w-10 p-0 text-text-secondary hover:text-primary hover:bg-primary/5 rounded-xl">
-                <FiPlus size={20} />
-              </Button>
-              <div className="w-6 h-px bg-border/60 mx-auto my-0.5"></div>
-              <Button variant="ghost" size="sm" onClick={() => handleZoom(-0.2)} className="h-10 w-10 p-0 text-text-secondary hover:text-primary hover:bg-primary/5 rounded-xl">
-                <FiMinus size={20} />
-              </Button>
-              <div className="w-6 h-px bg-border/60 mx-auto my-0.5"></div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+            <div className="zoom-toolbar absolute bottom-24 right-4 sm:bottom-8 sm:right-8 flex flex-col gap-1.5 bg-white/95 backdrop-blur-sm p-1.5 rounded-2xl shadow-xl border border-slate-200 z-40">
+              <button onClick={() => handleZoom(0.2)} className="w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 active:bg-slate-200 transition-colors" title="Zoom In">
+                <FiPlus className="w-5 h-5 text-slate-700" />
+              </button>
+              <button onClick={() => handleZoom(-0.2)} className="w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 active:bg-slate-200 transition-colors" title="Zoom Out">
+                <FiMinus className="w-5 h-5 text-slate-700" />
+              </button>
+              <div className="h-px bg-slate-200 my-0.5"></div>
+              <button 
                 onClick={() => {
                   let minX = Infinity;
                   let maxX = -Infinity;
@@ -830,10 +826,10 @@ export function Tree() {
                   }
                 }} 
                 title="Fit to Screen" 
-                className="h-10 w-10 p-0 text-text-secondary hover:text-primary hover:bg-primary/5 rounded-xl"
+                className="w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 active:bg-slate-200 transition-colors"
               >
-                <FiRefreshCcw size={18} />
-              </Button>
+                <FiRefreshCcw className="w-5 h-5 text-slate-700" />
+              </button>
             </div>
           </div>
         </div>

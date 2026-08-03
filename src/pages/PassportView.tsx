@@ -4,6 +4,7 @@ import { Person } from '@/types';
 import { getInitials } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { FiUser, FiCalendar, FiMapPin, FiInfo } from 'react-icons/fi';
+import { renderGroupedPersonOptions } from '@/lib/personUtils';
 
 interface GroupedRelative {
   person: Person;
@@ -151,9 +152,7 @@ export function PassportView() {
             onChange={(e) => setCenterId(e.target.value)}
             className="px-4 py-2.5 border border-border rounded-xl text-sm bg-surface min-w-[250px] shadow-sm focus:ring-2 focus:ring-primary/20 outline-none"
           >
-            {persons.map(p => (
-              <option key={p.id} value={p.id}>{p.firstName} {p.lastName}</option>
-            ))}
+            {renderGroupedPersonOptions(persons)}
           </select>
         </div>
       </div>

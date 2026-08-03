@@ -4,6 +4,7 @@ import { findKinshipPath } from '@/lib/kinship';
 import { getInitials } from '@/lib/utils';
 import { FiArrowRight, FiArrowDown } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
+import { renderGroupedPersonOptions } from '@/lib/personUtils';
 
 export function PathfinderView() {
   const { persons } = usePersons();
@@ -36,9 +37,7 @@ export function PathfinderView() {
               onChange={(e) => setSourceId(e.target.value)}
               className="px-3 py-2 border border-border rounded-lg text-xs bg-background w-full sm:w-[200px]"
             >
-              {persons.map(p => (
-                <option key={`src-${p.id}`} value={p.id}>{p.firstName} {p.lastName}</option>
-              ))}
+              {renderGroupedPersonOptions(persons)}
             </select>
           </div>
           <div className="hidden sm:flex text-text-secondary mt-5">
@@ -51,9 +50,7 @@ export function PathfinderView() {
               onChange={(e) => setTargetId(e.target.value)}
               className="px-3 py-2 border border-border rounded-lg text-xs bg-background w-full sm:w-[200px]"
             >
-              {persons.map(p => (
-                <option key={`tgt-${p.id}`} value={p.id}>{p.firstName} {p.lastName}</option>
-              ))}
+              {renderGroupedPersonOptions(persons)}
             </select>
           </div>
         </div>
