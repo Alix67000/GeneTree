@@ -416,10 +416,10 @@ export function AddPerson() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <datalist id="existing-firstnames">
-        {uniqueFirstNames.map(name => <option key={name} value={name} />)}
+        {formData.firstName.length >= 3 && uniqueFirstNames.map(name => <option key={name} value={name} />)}
       </datalist>
       <datalist id="existing-lastnames">
-        {uniqueLastNames.map(name => <option key={name} value={name} />)}
+        {formData.lastName.length >= 3 && uniqueLastNames.map(name => <option key={name} value={name} />)}
       </datalist>
       <div>
         <h1 className="text-3xl font-display font-semibold text-text-primary">

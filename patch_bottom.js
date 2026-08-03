@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+const fs = require('fs');
+const code = `import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { FiGitCommit, FiImage, FiClock, FiUser, FiSettings, FiSun, FiMapPin, FiBookOpen, FiStar, FiLayers, FiX } from 'react-icons/fi';
 import { useAuth } from '@/hooks/useAuth';
@@ -18,7 +19,7 @@ export function BottomNav() {
       <nav className="fixed bottom-0 left-0 right-0 h-16 bg-surface border-t border-border flex items-center justify-around z-50 md:hidden pb-safe">
         <NavLink 
           to="/tree" 
-          className={({ isActive }) => `flex flex-col items-center justify-center flex-1 h-full text-xs font-medium transition-colors ${isActive ? 'text-primary' : 'text-text-secondary hover:text-text-primary'}`}
+          className={({ isActive }) => \`flex flex-col items-center justify-center flex-1 h-full text-xs font-medium transition-colors \${isActive ? 'text-primary' : 'text-text-secondary hover:text-text-primary'}\`}
         >
           <FiGitCommit size={20} className="mb-1" />
           <span>Arbre</span>
@@ -26,7 +27,7 @@ export function BottomNav() {
         
         <NavLink 
           to="/photos" 
-          className={({ isActive }) => `flex flex-col items-center justify-center flex-1 h-full text-xs font-medium transition-colors ${isActive ? 'text-primary' : 'text-text-secondary hover:text-text-primary'}`}
+          className={({ isActive }) => \`flex flex-col items-center justify-center flex-1 h-full text-xs font-medium transition-colors \${isActive ? 'text-primary' : 'text-text-secondary hover:text-text-primary'}\`}
         >
           <FiImage size={20} className="mb-1" />
           <span>Galerie</span>
@@ -42,7 +43,7 @@ export function BottomNav() {
 
         <NavLink 
           to="/timeline" 
-          className={({ isActive }) => `flex flex-col items-center justify-center flex-1 h-full text-xs font-medium transition-colors ${isActive ? 'text-primary' : 'text-text-secondary hover:text-text-primary'}`}
+          className={({ isActive }) => \`flex flex-col items-center justify-center flex-1 h-full text-xs font-medium transition-colors \${isActive ? 'text-primary' : 'text-text-secondary hover:text-text-primary'}\`}
         >
           <FiClock size={20} className="mb-1" />
           <span>Chrono</span>
@@ -51,7 +52,7 @@ export function BottomNav() {
         {isAdmin ? (
           <NavLink 
             to="/admin" 
-            className={({ isActive }) => `flex flex-col items-center justify-center flex-1 h-full text-xs font-medium transition-colors ${isActive ? 'text-primary' : 'text-text-secondary hover:text-text-primary'}`}
+            className={({ isActive }) => \`flex flex-col items-center justify-center flex-1 h-full text-xs font-medium transition-colors \${isActive ? 'text-primary' : 'text-text-secondary hover:text-text-primary'}\`}
           >
             <FiSettings size={20} className="mb-1" />
             <span>Admin</span>
@@ -66,11 +67,11 @@ export function BottomNav() {
 
       {/* Bottom Drawer for Views */}
       <div 
-        className={`fixed inset-0 bg-black/50 z-50 transition-opacity duration-300 md:hidden ${drawerOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={\`fixed inset-0 bg-black/50 z-50 transition-opacity duration-300 md:hidden \${drawerOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}\`}
         onClick={() => setDrawerOpen(false)}
       >
         <div 
-          className={`absolute bottom-0 left-0 right-0 bg-surface rounded-t-2xl shadow-xl transition-transform duration-300 ${drawerOpen ? 'translate-y-0' : 'translate-y-full'}`}
+          className={\`absolute bottom-0 left-0 right-0 bg-surface rounded-t-2xl shadow-xl transition-transform duration-300 \${drawerOpen ? 'translate-y-0' : 'translate-y-full'}\`}
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between p-4 border-b border-border">
@@ -83,7 +84,7 @@ export function BottomNav() {
             <NavLink 
               to="/network" 
               onClick={() => setDrawerOpen(false)}
-              className={({ isActive }) => `flex flex-col items-center gap-2 p-4 rounded-xl border ${isActive ? 'border-primary bg-primary/5 text-primary' : 'border-border bg-background text-text-secondary hover:border-primary/50 hover:text-primary'}`}
+              className={({ isActive }) => \`flex flex-col items-center gap-2 p-4 rounded-xl border \${isActive ? 'border-primary bg-primary/5 text-primary' : 'border-border bg-background text-text-secondary hover:border-primary/50 hover:text-primary'}\`}
             >
               <FiSun size={28} />
               <span className="text-sm font-medium text-center">Solar Kinship</span>
@@ -91,7 +92,7 @@ export function BottomNav() {
             <NavLink 
               to="/star-network" 
               onClick={() => setDrawerOpen(false)}
-              className={({ isActive }) => `flex flex-col items-center gap-2 p-4 rounded-xl border ${isActive ? 'border-primary bg-primary/5 text-primary' : 'border-border bg-background text-text-secondary hover:border-primary/50 hover:text-primary'}`}
+              className={({ isActive }) => \`flex flex-col items-center gap-2 p-4 rounded-xl border \${isActive ? 'border-primary bg-primary/5 text-primary' : 'border-border bg-background text-text-secondary hover:border-primary/50 hover:text-primary'}\`}
             >
               <FiStar size={28} />
               <span className="text-sm font-medium text-center">Star Network</span>
@@ -99,7 +100,7 @@ export function BottomNav() {
             <NavLink 
               to="/pathfinder" 
               onClick={() => setDrawerOpen(false)}
-              className={({ isActive }) => `flex flex-col items-center gap-2 p-4 rounded-xl border ${isActive ? 'border-primary bg-primary/5 text-primary' : 'border-border bg-background text-text-secondary hover:border-primary/50 hover:text-primary'}`}
+              className={({ isActive }) => \`flex flex-col items-center gap-2 p-4 rounded-xl border \${isActive ? 'border-primary bg-primary/5 text-primary' : 'border-border bg-background text-text-secondary hover:border-primary/50 hover:text-primary'}\`}
             >
               <FiMapPin size={28} />
               <span className="text-sm font-medium text-center">Pathfinder</span>
@@ -107,7 +108,7 @@ export function BottomNav() {
             <NavLink 
               to="/passport" 
               onClick={() => setDrawerOpen(false)}
-              className={({ isActive }) => `flex flex-col items-center gap-2 p-4 rounded-xl border ${isActive ? 'border-primary bg-primary/5 text-primary' : 'border-border bg-background text-text-secondary hover:border-primary/50 hover:text-primary'}`}
+              className={({ isActive }) => \`flex flex-col items-center gap-2 p-4 rounded-xl border \${isActive ? 'border-primary bg-primary/5 text-primary' : 'border-border bg-background text-text-secondary hover:border-primary/50 hover:text-primary'}\`}
             >
               <FiBookOpen size={28} />
               <span className="text-sm font-medium text-center">Passport</span>
@@ -118,3 +119,5 @@ export function BottomNav() {
     </>
   );
 }
+\`;
+fs.writeFileSync('src/components/layout/BottomNav.tsx', code);

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Link } from 'react-router-dom';
 import { BirthdaysWidget } from '@/components/BirthdaysWidget';
+import { FloatingPhotoGalaxy } from '@/components/FloatingPhotoGalaxy';
 
 export function Home() {
   const { currentUser, loginWithEmail } = useAuth();
@@ -11,6 +12,8 @@ export function Home() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +38,9 @@ export function Home() {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center space-y-8 max-w-4xl mx-auto w-full">
         <h1 className="text-4xl md:text-5xl lg:text-6xl text-primary font-bold">Welcome back to GeneTree</h1>
+        
+        <FloatingPhotoGalaxy />
+
         <p className="text-xl text-text-secondary max-w-2xl">
           Continue building your family legacy. Add new relatives, preserve memories, and explore your ancestry.
         </p>

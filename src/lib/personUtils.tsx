@@ -20,7 +20,7 @@ export function renderGroupedPersonOptions(persons: Person[]) {
     <optgroup key={familyName} label={`— ${familyName} —`}>
       {members.map(m => (
         <option key={m.id} value={m.id}>
-          {m.firstName} {m.lastName} {m.birthDate ? `(${new Date(m.birthDate).getFullYear()})` : ''}
+          {(m.lastName || '').toUpperCase()} {m.firstName} {m.birthDate ? `(${new Date(m.birthDate).getFullYear()})` : ''}
         </option>
       ))}
     </optgroup>
