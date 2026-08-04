@@ -1,3 +1,4 @@
+import { COUNTRIES_WITH_FLAGS } from "@/lib/countries";
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { collection, addDoc, updateDoc, doc, getDoc, serverTimestamp } from 'firebase/firestore';
@@ -524,7 +525,9 @@ export function AddPerson() {
               <label className="text-sm font-medium text-text-primary">Birth Place</label>
               <input 
                 type="text" 
-                name="birthPlace" 
+                name="birthPlace"
+                list="countries-list"
+                placeholder="e.g. 🇮🇷 Iran, 🇫🇷 France" 
                 value={formData.birthPlace} 
                 onChange={handleChange}
                 className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
@@ -572,7 +575,9 @@ export function AddPerson() {
                 <label className="text-sm font-medium text-text-primary">Death Place</label>
                 <input 
                   type="text" 
-                  name="deathPlace" 
+                  name="deathPlace"
+                  list="countries-list"
+                  placeholder="e.g. 🇮🇷 Iran, 🇫🇷 France" 
                   value={formData.deathPlace} 
                   onChange={handleChange}
                   className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50"

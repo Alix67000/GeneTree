@@ -2,6 +2,7 @@ import React from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Link } from 'react-router-dom';
+import { Globe } from '@/components/Globe';
 
 export function About() {
   return (
@@ -43,6 +44,10 @@ export function About() {
           </Link>
         </div>
       </Card>
+
+      <div className="w-full pt-6 pb-12 flex justify-center">
+        <Globe />
+      </div>
     </div>
   );
 }
