@@ -45,7 +45,7 @@ export function About() {
         </div>
       </Card>
 
-      <div className="w-full pt-6 pb-12 flex justify-center">
+      <div className="relative w-full h-[450px] sm:h-[550px] flex items-center justify-center my-8 overflow-hidden">
         <Globe />
       </div>
     </div>
