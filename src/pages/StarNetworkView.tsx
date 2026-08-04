@@ -71,14 +71,14 @@ export function StarNetworkView() {
     parents.forEach((p, idx) => {
       addedIds.add(p.id);
       const x = (idx - (parents.length - 1) / 2) * 250;
-      nList.push({ id: p.id, person: p, x, y: -250, color: 'blue', title: p.gender === 'male' ? 'Father' : p.gender === 'female' ? 'Mother' : 'Parent' });
+      nList.push({ id: p.id, person: p, x, y: -340, color: 'blue', title: p.gender === 'male' ? 'Father' : p.gender === 'female' ? 'Mother' : 'Parent' });
       lList.push({ source: activeCenterId, target: p.id, color: '#3b82f6' });
       
       const gp = getParents(p.id).filter(g => !addedIds.has(g.id));
       gp.forEach((g, gIdx) => {
         addedIds.add(g.id);
         const gx = x + (gIdx - (gp.length - 1) / 2) * 160;
-        nList.push({ id: g.id, person: g, x: gx, y: -450, color: 'blue', title: g.gender === 'male' ? 'Grandfather' : g.gender === 'female' ? 'Grandmother' : 'Grandparent' });
+        nList.push({ id: g.id, person: g, x: gx, y: -580, color: 'blue', title: g.gender === 'male' ? 'Grandfather' : g.gender === 'female' ? 'Grandmother' : 'Grandparent' });
         lList.push({ source: p.id, target: g.id, color: '#3b82f6' });
       });
     });
@@ -88,14 +88,14 @@ export function StarNetworkView() {
     children.forEach((c, idx) => {
       addedIds.add(c.id);
       const x = (idx - (children.length - 1) / 2) * 250;
-      nList.push({ id: c.id, person: c, x, y: 250, color: 'green', title: c.gender === 'male' ? 'Son' : c.gender === 'female' ? 'Daughter' : 'Child' });
+      nList.push({ id: c.id, person: c, x, y: 340, color: 'green', title: c.gender === 'male' ? 'Son' : c.gender === 'female' ? 'Daughter' : 'Child' });
       lList.push({ source: activeCenterId, target: c.id, color: '#22c55e' });
       
       const gc = getChildren(c.id).filter(g => !addedIds.has(g.id));
       gc.forEach((g, gIdx) => {
         addedIds.add(g.id);
         const gx = x + (gIdx - (gc.length - 1) / 2) * 160;
-        nList.push({ id: g.id, person: g, x: gx, y: 450, color: 'green', title: g.gender === 'male' ? 'Grandson' : g.gender === 'female' ? 'Granddaughter' : 'Grandchild' });
+        nList.push({ id: g.id, person: g, x: gx, y: 580, color: 'green', title: g.gender === 'male' ? 'Grandson' : g.gender === 'female' ? 'Granddaughter' : 'Grandchild' });
         lList.push({ source: c.id, target: g.id, color: '#22c55e' });
       });
     });
@@ -108,14 +108,14 @@ export function StarNetworkView() {
       fatherSibs.forEach((fs, idx) => {
         addedIds.add(fs.id);
         const y = (idx - (fatherSibs.length - 1) / 2) * 250;
-        nList.push({ id: fs.id, person: fs, x: 350, y, color: 'orange', title: fs.gender === 'male' ? 'Paternal Uncle' : fs.gender === 'female' ? 'Paternal Aunt' : 'Paternal Uncle/Aunt' });
+        nList.push({ id: fs.id, person: fs, x: 450, y, color: 'orange', title: fs.gender === 'male' ? 'Paternal Uncle' : fs.gender === 'female' ? 'Paternal Aunt' : 'Paternal Uncle/Aunt' });
         lList.push({ source: activeCenterId, target: fs.id, color: '#f97316' });
         
         const cousins = getChildren(fs.id).filter(c => !addedIds.has(c.id));
         cousins.forEach((c, cIdx) => {
           addedIds.add(c.id);
           const cy = y + (cIdx - (cousins.length - 1) / 2) * 160;
-          nList.push({ id: c.id, person: c, x: 600, y: cy, color: 'orange', title: 'Paternal Cousin' });
+          nList.push({ id: c.id, person: c, x: 750, y: cy, color: 'orange', title: 'Paternal Cousin' });
           lList.push({ source: fs.id, target: c.id, color: '#f97316' });
         });
       });
@@ -128,17 +128,37 @@ export function StarNetworkView() {
       motherSibs.forEach((ms, idx) => {
         addedIds.add(ms.id);
         const y = (idx - (motherSibs.length - 1) / 2) * 250;
-        nList.push({ id: ms.id, person: ms, x: -350, y, color: 'purple', title: ms.gender === 'male' ? 'Maternal Uncle' : ms.gender === 'female' ? 'Maternal Aunt' : 'Maternal Uncle/Aunt' });
+        nList.push({ id: ms.id, person: ms, x: -450, y, color: 'purple', title: ms.gender === 'male' ? 'Maternal Uncle' : ms.gender === 'female' ? 'Maternal Aunt' : 'Maternal Uncle/Aunt' });
         lList.push({ source: activeCenterId, target: ms.id, color: '#a855f7' });
         
         const cousins = getChildren(ms.id).filter(c => !addedIds.has(c.id));
         cousins.forEach((c, cIdx) => {
           addedIds.add(c.id);
           const cy = y + (cIdx - (cousins.length - 1) / 2) * 160;
-          nList.push({ id: c.id, person: c, x: -600, y: cy, color: 'purple', title: 'Maternal Cousin' });
+          nList.push({ id: c.id, person: c, x: -750, y: cy, color: 'purple', title: 'Maternal Cousin' });
           lList.push({ source: ms.id, target: c.id, color: '#a855f7' });
         });
       });
+    }
+
+    // Anti-collision pass: garantit que deux cartes ne se chevauchent jamais (distance minimale 210px)
+    for (let iter = 0; iter < 12; iter++) {
+      for (let i = 0; i < nList.length; i++) {
+        for (let j = i + 1; j < nList.length; j++) {
+          const dx = nList[j].x - nList[i].x;
+          const dy = nList[j].y - nList[i].y;
+          const dist = Math.hypot(dx, dy);
+          const minDist = 220; // Largeur de carte (160px) + marge de sécurité (60px)
+          if (dist < minDist) {
+            const angle = Math.atan2(dy, dx) || 0;
+            const push = (minDist - dist) / 2 + 15;
+            nList[j].x += Math.cos(angle) * push;
+            nList[j].y += Math.sin(angle) * push;
+            nList[i].x -= Math.cos(angle) * push;
+            nList[i].y -= Math.sin(angle) * push;
+          }
+        }
+      }
     }
 
     return { nodes: nList, links: lList };
