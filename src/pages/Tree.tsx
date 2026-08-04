@@ -7,7 +7,7 @@ import { getInitials, formatPersonAge } from '@/lib/utils';
 import { BirthdaysWidget } from '@/components/BirthdaysWidget';
 import { 
   FiPlus, FiMinus, FiRefreshCcw, FiUser, FiGrid, FiGitCommit, 
-  FiHeart, FiEye, FiArrowUp, FiArrowDown, FiDownload
+  FiHeart, FiEye, FiArrowUp, FiArrowDown, FiDownload, FiZoomIn, FiZoomOut, FiMaximize
 } from 'react-icons/fi';
 import { Person } from '@/types';
 import { renderGroupedPersonOptions } from '@/lib/personUtils';
@@ -334,6 +334,8 @@ export function Tree() {
       return { ...prev, scale: newScale };
     });
   };
+
+  const handleResetZoom = () => setTransform({ x: 0, y: 0, scale: 1 });
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('.person-card') || (e.target as HTMLElement).closest('button')) return;
@@ -780,55 +782,16 @@ export function Tree() {
             </div>
 
             {/* Toolbar */}
-            <div className="zoom-toolbar absolute bottom-24 left-4 sm:bottom-8 sm:right-8 flex flex-col gap-1.5 bg-white/95 backdrop-blur-sm p-1.5 rounded-2xl shadow-xl border border-border z-40">
-              <button onClick={() => handleZoom(0.2)} className="w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 active:bg-slate-200 transition-colors" title="Zoom In">
-                <FiPlus className="w-5 h-5 text-slate-700" />
+            <div className="zoom-toolbar absolute bottom-6 right-6 flex flex-col gap-1 bg-white p-1.5 rounded-xl shadow-lg border border-slate-200 z-30 w-auto">
+              <button onClick={() => handleZoom(0.2)} className="p-2 hover:bg-slate-50 rounded-lg transition-colors" title="Zoom In">
+                <FiZoomIn className="w-4 h-4 text-slate-600" />
               </button>
-              <button onClick={() => handleZoom(-0.2)} className="w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 active:bg-slate-200 transition-colors" title="Zoom Out">
-                <FiMinus className="w-5 h-5 text-slate-700" />
+              <button onClick={() => handleZoom(-0.2)} className="p-2 hover:bg-slate-50 rounded-lg transition-colors" title="Zoom Out">
+                <FiZoomOut className="w-4 h-4 text-slate-600" />
               </button>
               <div className="h-px bg-slate-200 my-0.5"></div>
-              <button 
-                onClick={() => {
-                  let minX = Infinity;
-                  let maxX = -Infinity;
-                  let minY = Infinity;
-                  let maxY = -Infinity;
-                  
-                  persons.forEach(p => {
-                    const x = xPos.get(p.id) || 0;
-                    const y = (levels.get(p.id) || 0) * 300;
-                    if (x < minX) minX = x;
-                    if (x > maxX) maxX = x;
-                    if (y < minY) minY = y;
-                    if (y > maxY) maxY = y;
-                  });
-                  
-                  const width = maxX - minX + 300;
-                  const height = maxY - minY + 250;
-                  
-                  const containerRect = containerRef.current?.getBoundingClientRect();
-                  if (containerRect) {
-                    const scaleX = (containerRect.width - 40) / width;
-                    const scaleY = (containerRect.height - 40) / height;
-                    
-                    let scale = Math.min(scaleX, scaleY);
-                    scale = Math.max(0.3, Math.min(scale, 1.2));
-                    
-                    const centerX = (minX + maxX) / 2;
-                    const centerY = (minY + maxY) / 2;
-                    
-                    setTransform({
-                      x: containerRect.width / 2 - centerX * scale,
-                      y: containerRect.height / 2 - centerY * scale,
-                      scale: scale
-                    });
-                  }
-                }} 
-                title="Fit to Screen" 
-                className="w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 active:bg-slate-200 transition-colors"
-              >
-                <FiRefreshCcw className="w-5 h-5 text-slate-700" />
+              <button onClick={handleResetZoom} className="p-2 hover:bg-slate-50 rounded-lg transition-colors" title="Reset">
+                <FiMaximize className="w-4 h-4 text-slate-600" />
               </button>
             </div>
           </div>
