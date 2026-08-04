@@ -2,7 +2,6 @@ import React from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Link } from 'react-router-dom';
-import { GlobeDemo } from '@/components/ui/GlobeDemo';
 
 export function About() {
   return (
@@ -44,8 +43,6 @@ export function About() {
           </Link>
         </div>
       </Card>
-
-      <GlobeDemo />
     </div>
   );
 }

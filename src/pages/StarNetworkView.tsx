@@ -29,6 +29,11 @@ export function StarNetworkView() {
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
 
+  const [customPositions, setCustomPositions] = useState<Record<string, { x: number; y: number }>>({});
+  const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
+  const nodeDragStartRef = useRef<{ x: number; y: number; mouseX: number; mouseY: number } | null>(null);
+  const hasMovedNodeRef = useRef(false);
+
   const activeCenterId = useMemo(() => {
     if (centerId && persons.some(p => p.id === centerId)) return centerId;
     return persons.length > 0 ? persons[0].id : null;
@@ -139,6 +144,43 @@ export function StarNetworkView() {
     return { nodes: nList, links: lList };
   }, [activeCenterId, persons]);
 
+  const positionedNodes = useMemo(() => {
+    return nodes.map(node => ({
+      ...node,
+      x: customPositions[node.id]?.x ?? node.x,
+      y: customPositions[node.id]?.y ?? node.y,
+    }));
+  }, [nodes, customPositions]);
+
+  const handleNodeMouseDown = (e: React.MouseEvent, node: StarNode) => {
+    e.stopPropagation();
+    setDraggingNodeId(node.id);
+    hasMovedNodeRef.current = false;
+    const initialX = customPositions[node.id]?.x ?? node.x;
+    const initialY = customPositions[node.id]?.y ?? node.y;
+    nodeDragStartRef.current = {
+      x: initialX,
+      y: initialY,
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+    };
+  };
+
+  const handleNodeTouchStart = (e: React.TouchEvent, node: StarNode) => {
+    if (e.touches.length !== 1) return;
+    e.stopPropagation();
+    setDraggingNodeId(node.id);
+    hasMovedNodeRef.current = false;
+    const initialX = customPositions[node.id]?.x ?? node.x;
+    const initialY = customPositions[node.id]?.y ?? node.y;
+    nodeDragStartRef.current = {
+      x: initialX,
+      y: initialY,
+      mouseX: e.touches[0].clientX,
+      mouseY: e.touches[0].clientY,
+    };
+  };
+
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('.node-card') || (e.target as HTMLElement).closest('.zoom-toolbar')) return;
     setIsDragging(true);
@@ -146,6 +188,25 @@ export function StarNetworkView() {
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
+    if (draggingNodeId && nodeDragStartRef.current) {
+      const dragStart = nodeDragStartRef.current;
+      const dx = (e.clientX - dragStart.mouseX) / transform.scale;
+      const dy = (e.clientY - dragStart.mouseY) / transform.scale;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+        hasMovedNodeRef.current = true;
+      }
+      const newX = dragStart.x + dx;
+      const newY = dragStart.y + dy;
+      setCustomPositions(prev => ({
+        ...prev,
+        [draggingNodeId]: {
+          x: newX,
+          y: newY,
+        }
+      }));
+      return;
+    }
+
     if (!isDragging) return;
     setTransform(prev => ({
       ...prev,
@@ -154,7 +215,11 @@ export function StarNetworkView() {
     }));
   };
 
-  const handleMouseUp = () => setIsDragging(false);
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    setDraggingNodeId(null);
+    nodeDragStartRef.current = null;
+  };
 
   const touchStartDistRef = useRef<number | null>(null);
   const touchStartScaleRef = useRef<number>(1);
@@ -176,6 +241,26 @@ export function StarNetworkView() {
     if (e.touches.length === 2 && e.cancelable) {
       e.preventDefault();
     }
+
+    if (draggingNodeId && nodeDragStartRef.current && e.touches[0]) {
+      const dragStart = nodeDragStartRef.current;
+      const dx = (e.touches[0].clientX - dragStart.mouseX) / transform.scale;
+      const dy = (e.touches[0].clientY - dragStart.mouseY) / transform.scale;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+        hasMovedNodeRef.current = true;
+      }
+      const newX = dragStart.x + dx;
+      const newY = dragStart.y + dy;
+      setCustomPositions(prev => ({
+        ...prev,
+        [draggingNodeId]: {
+          x: newX,
+          y: newY,
+        }
+      }));
+      return;
+    }
+
     if (e.touches.length === 1 && isDragging) {
       setTransform(prev => ({
         ...prev,
@@ -197,6 +282,8 @@ export function StarNetworkView() {
 
   const handleTouchEnd = () => {
     setIsDragging(false);
+    setDraggingNodeId(null);
+    nodeDragStartRef.current = null;
     touchStartDistRef.current = null;
   };
 
@@ -262,8 +349,8 @@ export function StarNetworkView() {
           >
             <svg className="absolute inset-0 w-full h-full overflow-visible pointer-events-none">
               {links.map((link, idx) => {
-                const sourceNode = nodes.find(n => n.id === link.source);
-                const targetNode = nodes.find(n => n.id === link.target);
+                const sourceNode = positionedNodes.find(n => n.id === link.source);
+                const targetNode = positionedNodes.find(n => n.id === link.target);
                 if (!sourceNode || !targetNode) return null;
                 
                 const sx = sourceNode.x + window.innerWidth / 2;
@@ -286,7 +373,7 @@ export function StarNetworkView() {
               })}
             </svg>
 
-            {nodes.map(node => {
+            {positionedNodes.map(node => {
               const left = node.x + window.innerWidth / 2 - 75; // width 150 -> 75
               const top = node.y + window.innerHeight / 2 - 65; // height ~130 -> 65
               const colors = getColorClasses(node.color);
@@ -294,21 +381,27 @@ export function StarNetworkView() {
               return (
                 <div
                   key={node.id}
-                  onClick={() => setCenterId(node.id)}
+                  onMouseDown={(e) => handleNodeMouseDown(e, node)}
+                  onTouchStart={(e) => handleNodeTouchStart(e, node)}
+                  onClick={() => {
+                    if (!hasMovedNodeRef.current) {
+                      setCenterId(node.id);
+                    }
+                  }}
                   style={{ left, top }}
-                  className={`node-card absolute w-[150px] p-3 bg-white rounded-xl border-2 shadow-md hover:shadow-lg transition-all cursor-pointer flex flex-col items-center text-center z-10 ${colors.border} ${node.isCenter ? 'z-30' : ''}`}
+                  className={`node-card absolute w-[150px] p-3 bg-white rounded-xl border-2 shadow-md hover:shadow-lg cursor-grab active:cursor-grabbing flex flex-col items-center text-center z-10 ${colors.border} ${node.isCenter ? 'z-30' : ''}`}
                 >
-                  <div className={`absolute -top-3 px-3 py-0.5 rounded-full text-[10px] font-bold shadow-sm text-white ${colors.badge}`}>
+                  <div className={`node-card-drag-handle absolute -top-3 px-3 py-0.5 rounded-full text-[10px] font-bold shadow-sm text-white cursor-grab active:cursor-grabbing ${colors.badge}`}>
                     {node.title}
                   </div>
-                  <div className={`w-14 h-14 rounded-full border-2 bg-slate-50 shadow-inner flex items-center justify-center text-sm font-display font-semibold text-slate-700 overflow-hidden mt-1.5 ${colors.border}`}>
+                  <div className={`w-14 h-14 rounded-full border-2 bg-slate-50 shadow-inner flex items-center justify-center text-sm font-display font-semibold text-slate-700 overflow-hidden mt-1.5 pointer-events-none ${colors.border}`}>
                     {node.person.photoUrl ? (
                       <img src={node.person.photoUrl} alt="" className="w-full h-full object-cover" />
                     ) : (
                       getInitials(node.person.firstName, node.person.lastName)
                     )}
                   </div>
-                  <h4 className="font-display font-bold text-xs text-slate-800 mt-2 truncate w-full">
+                  <h4 className="font-display font-bold text-xs text-slate-800 mt-2 truncate w-full pointer-events-none">
                     {node.person.firstName} {node.person.lastName}
                   </h4>
                   <Link
