@@ -1,9 +1,8 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePersons } from '@/hooks/usePersons';
-import { Card } from '@/components/ui/Card';
-import { formatDate } from '@/lib/utils';
-import { FiUserPlus, FiUserMinus, FiClock } from 'react-icons/fi';
+import { getInitials } from '@/lib/utils';
+import { FiUserPlus, FiUserMinus } from 'react-icons/fi';
 import { Person } from '@/types';
 
 type TimelineEvent = {
@@ -33,7 +32,7 @@ export function Timeline() {
             dateObj: d,
             year: d.getFullYear(),
             person,
-            location: person.birthPlace
+            location: person.birthPlace,
           });
         }
       }
@@ -47,129 +46,133 @@ export function Timeline() {
             dateObj: d,
             year: d.getFullYear(),
             person,
-            location: person.deathPlace
+            location: person.deathPlace,
           });
         }
       }
     });
 
-    list.sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
-    return list;
+    return list.sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
   }, [persons]);
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4 pb-20">
-      <div className="mb-12 text-center md:text-left">
-        <h1 className="text-3xl font-display font-semibold text-text-primary">Chronologie</h1>
-        <p className="text-text-secondary mt-2">Retrouvez tous les événements marquants de l'arbre au fil du temps.</p>
+    <div className="flex flex-col min-h-[calc(100vh-4rem)] bg-background">
+      <div className="p-4 border-b border-border bg-surface flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 shadow-sm z-10">
+        <div>
+          <h2 className="text-xl font-display font-bold text-text-primary">Family Heritage Timeline</h2>
+          <p className="text-xs text-text-secondary mt-0.5">Chronological history of births and memorials across generations.</p>
+        </div>
+        <div className="text-xs font-semibold px-3 py-1 bg-primary/10 text-primary rounded-full">
+          {events.length} Historical Events
+        </div>
       </div>
-      
-      {events.length > 0 ? (
-        <div className="relative w-full">
-          <div className="overflow-x-auto pb-12 pt-4 flex items-center snap-x hide-scrollbar">
-            <div className="relative flex items-center min-w-max px-8 py-8">
-              {/* Ligne horizontale centrale continue */}
-              <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-slate-200 -translate-y-1/2 z-0"></div>
-              
-              {events.map((evt, index) => {
-                const isTop = index % 2 === 0;
-                const isBirth = evt.type === 'BIRTH';
-                const showYear = index === 0 || events[index - 1].year !== evt.year;
-                
-                return (
-                  <React.Fragment key={evt.id}>
-                    {showYear && (
-                      <div className="relative z-10 mx-6 bg-slate-100 border border-slate-200 text-slate-500 font-bold px-4 py-1.5 rounded-full text-sm shadow-sm shrink-0">
-                        {evt.year}
-                      </div>
-                    )}
-                    
-                    <div 
-                      className="relative flex flex-col items-center justify-center group cursor-pointer w-72 shrink-0 h-[400px] mx-4 snap-center"
-                      onClick={() => navigate(`/person/${evt.person.id}`)}
-                    >
-                      {/* Partie Supérieure */}
-                      <div className="flex-1 w-full flex flex-col justify-end pb-1 relative">
-                        {isTop && (
-                          <div className="flex flex-col items-center w-full">
-                            <Card className="p-5 hover:shadow-md transition-shadow relative z-10 w-full mb-0">
-                              <div className="text-sm text-text-secondary font-medium mb-1">
-                                {formatDate(evt.dateStr)}
-                              </div>
-                              <div className="font-semibold text-text-primary text-lg truncate">
-                                {evt.person.firstName} {evt.person.lastName}
-                              </div>
-                              <div className="text-sm text-text-secondary mt-1 truncate">
-                                {isBirth ? 'Naissance' : 'Décès'} {evt.location ? `à ${evt.location}` : ''}
-                                {!isBirth && evt.person.birthDate && (
-                                  <span className="ml-1">
-                                    ({new Date(evt.dateStr).getFullYear() - new Date(evt.person.birthDate).getFullYear()} ans)
-                                  </span>
+
+      <div className="flex-1 relative flex items-center overflow-x-auto py-12 px-6 bg-[#f8fafc] hide-scrollbar select-none">
+        {events.length === 0 ? (
+          <div className="w-full text-center text-text-secondary py-12 text-sm">
+            No historical dates recorded. Add birth or death dates to family members to populate the timeline.
+          </div>
+        ) : (
+          <div className="relative flex items-center min-w-max mx-auto py-8">
+            <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-1 bg-gradient-to-r from-border via-primary/30 to-border"></div>
+
+            {events.map((evt, index) => {
+              const isTop = index % 2 === 0;
+              const isBirth = evt.type === 'BIRTH';
+              const showYear = index === 0 || events[index - 1].year !== evt.year;
+
+              return (
+                <React.Fragment key={evt.id}>
+                  {showYear && (
+                    <div className="relative z-10 mx-3 bg-primary text-white font-bold px-3 py-1 rounded-full text-xs shadow shrink-0">
+                      {evt.year}
+                    </div>
+                  )}
+
+                  <div
+                    onClick={() => navigate(`/person/${evt.person.id}`)}
+                    className="relative flex flex-col items-center justify-center group cursor-pointer w-48 sm:w-52 shrink-0 h-[260px] mx-2"
+                  >
+                    <div className="flex-1 w-full flex flex-col justify-end pb-2 relative">
+                      {isTop && (
+                        <div className="flex flex-col items-center w-full">
+                          <div className="p-3 bg-white border border-border rounded-xl shadow-sm hover:shadow-md transition-all w-full text-center relative z-10 group-hover:border-primary/50">
+                            <div className="flex items-center justify-center gap-2 mb-1.5">
+                              <div className="w-8 h-8 rounded-full border border-accent bg-border overflow-hidden flex items-center justify-center text-[10px] font-bold">
+                                {evt.person.photoUrl ? (
+                                  <img src={evt.person.photoUrl} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  getInitials(evt.person.firstName, evt.person.lastName)
                                 )}
                               </div>
-                            </Card>
-                            <div className="w-0.5 h-8 bg-slate-300 group-hover:bg-primary/50 transition-colors"></div>
+                              <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                                isBirth ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'
+                              }`}>
+                                {isBirth ? 'BORN' : 'DIED'}
+                              </span>
+                            </div>
+                            <h4 className="font-display font-bold text-xs text-text-primary truncate">
+                              {evt.person.firstName} {evt.person.lastName}
+                            </h4>
+                            <p className="text-[10px] text-text-secondary mt-0.5 truncate">
+                              {evt.year} {evt.location ? `• ${evt.location}` : ''}
+                            </p>
                           </div>
-                        )}
-                      </div>
-
-                      {/* Icône Centrale */}
-                      <div className="relative z-10 flex-shrink-0">
-                        <div className="w-12 h-12 bg-white border-4 border-white rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 group-hover:shadow-md transition-all duration-300 ring-2 ring-transparent group-hover:ring-primary/20">
-                          {isBirth ? (
-                            <div className="w-full h-full rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
-                              <FiUserPlus size={18} />
-                            </div>
-                          ) : (
-                            <div className="w-full h-full rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
-                              <FiUserMinus size={18} />
-                            </div>
-                          )}
+                          <div className="w-0.5 h-6 bg-slate-300 group-hover:bg-primary transition-colors"></div>
                         </div>
-                      </div>
+                      )}
+                    </div>
 
-                      {/* Partie Inférieure */}
-                      <div className="flex-1 w-full flex flex-col justify-start pt-1 relative">
-                        {!isTop && (
-                          <div className="flex flex-col items-center w-full">
-                            <div className="w-0.5 h-8 bg-slate-300 group-hover:bg-primary/50 transition-colors"></div>
-                            <Card className="p-5 hover:shadow-md transition-shadow relative z-10 w-full mt-0">
-                              <div className="text-sm text-text-secondary font-medium mb-1">
-                                {formatDate(evt.dateStr)}
-                              </div>
-                              <div className="font-semibold text-text-primary text-lg truncate">
-                                {evt.person.firstName} {evt.person.lastName}
-                              </div>
-                              <div className="text-sm text-text-secondary mt-1 truncate">
-                                {isBirth ? 'Naissance' : 'Décès'} {evt.location ? `à ${evt.location}` : ''}
-                                {!isBirth && evt.person.birthDate && (
-                                  <span className="ml-1">
-                                    ({new Date(evt.dateStr).getFullYear() - new Date(evt.person.birthDate).getFullYear()} ans)
-                                  </span>
-                                )}
-                              </div>
-                            </Card>
+                    <div className="relative z-10 flex-shrink-0">
+                      <div className="w-9 h-9 bg-white border-2 border-white rounded-full flex items-center justify-center shadow group-hover:scale-110 transition-transform">
+                        {isBirth ? (
+                          <div className="w-full h-full rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                            <FiUserPlus size={14} />
+                          </div>
+                        ) : (
+                          <div className="w-full h-full rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+                            <FiUserMinus size={14} />
                           </div>
                         )}
                       </div>
                     </div>
-                  </React.Fragment>
-                );
-              })}
-            </div>
+
+                    <div className="flex-1 w-full flex flex-col justify-start pt-2 relative">
+                      {!isTop && (
+                        <div className="flex flex-col items-center w-full">
+                          <div className="w-0.5 h-6 bg-slate-300 group-hover:bg-primary transition-colors"></div>
+                          <div className="p-3 bg-white border border-border rounded-xl shadow-sm hover:shadow-md transition-all w-full text-center relative z-10 group-hover:border-primary/50">
+                            <div className="flex items-center justify-center gap-2 mb-1.5">
+                              <div className="w-8 h-8 rounded-full border border-accent bg-border overflow-hidden flex items-center justify-center text-[10px] font-bold">
+                                {evt.person.photoUrl ? (
+                                  <img src={evt.person.photoUrl} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  getInitials(evt.person.firstName, evt.person.lastName)
+                                )}
+                              </div>
+                              <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                                isBirth ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'
+                              }`}>
+                                {isBirth ? 'BORN' : 'DIED'}
+                              </span>
+                            </div>
+                            <h4 className="font-display font-bold text-xs text-text-primary truncate">
+                              {evt.person.firstName} {evt.person.lastName}
+                            </h4>
+                            <p className="text-[10px] text-text-secondary mt-0.5 truncate">
+                              {evt.year} {evt.location ? `• ${evt.location}` : ''}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </React.Fragment>
+              );
+            })}
           </div>
-        </div>
-      ) : (
-        <Card className="text-center py-20 flex flex-col items-center justify-center space-y-4">
-          <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center text-accent mb-4">
-            <FiClock size={32} />
-          </div>
-          <h2 className="text-xl font-display font-medium text-text-primary">Aucun événement à afficher</h2>
-          <p className="text-text-secondary max-w-md">
-            Ajoutez des dates de naissance ou de décès aux membres de votre famille pour voir la chronologie se construire.
-          </p>
-        </Card>
-      )}
+        )}
+      </div>
     </div>
   );
 }

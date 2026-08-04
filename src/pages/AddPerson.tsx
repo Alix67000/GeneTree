@@ -6,6 +6,7 @@ import { db, storage } from '@/services/firebase';
 import { COLLECTIONS } from '@/lib/constants';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { AutocompletePerson } from '@/components/AutocompletePerson';
 import { useFamily } from '@/hooks/useFamily';
 import { usePersons } from '@/hooks/usePersons';
 import { Gender, Person } from '@/types';
@@ -223,7 +224,8 @@ export function AddPerson() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const target = e.target as HTMLInputElement;
-    const value = target.type === 'checkbox' ? target.checked : target.value;
+    const rawValue = target.type === 'checkbox' ? target.checked : target.value;
+    const value = target.name === 'lastName' && typeof rawValue === 'string' ? rawValue.toUpperCase() : rawValue;
     const name = target.name;
     
     setFormData(prev => {
@@ -478,20 +480,7 @@ export function AddPerson() {
                 <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
               </label>
             </div>
-            {(loading && photoFile) && (
-              <div className="space-y-1">
-                <div className="text-xs text-text-secondary">
-                  {uploadProgress === 0 
-                    ? "Uploading photo to server..." 
-                    : isFallback
-                      ? "Fallback mode (Optimized Base64 WebP)..."
-                      : `Uploading: ${uploadProgress}%`}
-                </div>
-                <div className={`w-full bg-gray-200 h-2 rounded ${uploadProgress === 0 ? 'animate-pulse' : ''}`}>
-                  <div className={`bg-primary h-2 rounded ${uploadProgress === 0 ? 'w-full opacity-50' : ''}`} style={{ width: uploadProgress > 0 ? `${uploadProgress}%` : undefined }}></div>
-                </div>
-              </div>
-            )}
+            
           </div>
 
           <div className="space-y-2">
@@ -593,50 +582,32 @@ export function AddPerson() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-border">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-text-primary">Père (Father)</label>
-              <select
-                value={formData.parentId1}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setFormData(prev => ({ ...prev, parentId1: val }));
-                  if (val && !formData.lastName) {
-                     const father = persons.find(p => p.id === val);
-                     if (father && father.lastName) {
-                        setFormData(prev => ({ ...prev, lastName: father.lastName }));
-                     }
-                  }
-                }}
-                className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50 bg-white"
-              >
-                <option value="">Sélectionnez un parent...</option>
-                {renderGroupedPersonOptions(persons.filter(p => p.gender === 'male' && p.id !== id))}
-              </select>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-text-primary">Mère (Mother)</label>
-              <select
-                value={formData.parentId2}
-                onChange={(e) => setFormData(prev => ({ ...prev, parentId2: e.target.value }))}
-                className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50 bg-white"
-              >
-                <option value="">Sélectionnez un parent...</option>
-                {renderGroupedPersonOptions(persons.filter(p => p.gender === 'female' && p.id !== id))}
-              </select>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-text-primary">Conjoint(e)</label>
-              <select
-                value={formData.spouseId}
-                onChange={(e) => setFormData(prev => ({ ...prev, spouseId: e.target.value }))}
-                className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50 bg-white"
-              >
-                <option value="">Sélectionnez un(e) conjoint(e)...</option>
-                {renderGroupedPersonOptions(persons.filter(p => (p.gender !== formData.gender || !p.gender) && p.id !== id))}
-              </select>
-            </div>
+            <AutocompletePerson
+              label="Père (Father)"
+              valueId={formData.parentId1}
+              onChange={(id, lastName) => {
+                setFormData(prev => ({ ...prev, parentId1: id }));
+                if (id && lastName && !formData.lastName) {
+                   setFormData(prev => ({ ...prev, lastName: lastName.toUpperCase() }));
+                }
+              }}
+              options={persons.filter(p => p.gender === 'male' && p.id !== id)}
+              placeholder="Saisissez au moins 3 lettres..."
+            />
+            <AutocompletePerson
+              label="Mère (Mother)"
+              valueId={formData.parentId2}
+              onChange={(id) => setFormData(prev => ({ ...prev, parentId2: id }))}
+              options={persons.filter(p => p.gender === 'female' && p.id !== id)}
+              placeholder="Saisissez au moins 3 lettres..."
+            />
+            <AutocompletePerson
+              label="Conjoint(e)"
+              valueId={formData.spouseId}
+              onChange={(id) => setFormData(prev => ({ ...prev, spouseId: id }))}
+              options={persons.filter(p => (p.gender !== formData.gender || !p.gender) && p.id !== id)}
+              placeholder="Saisissez au moins 3 lettres..."
+            />
           </div>
 
           <div className="space-y-2">
@@ -651,9 +622,25 @@ export function AddPerson() {
             />
           </div>
 
-          <div className="flex justify-end gap-4 pt-4 border-t border-border">
-            <Button type="button" variant="ghost" onClick={() => navigate(-1)}>Cancel</Button>
-            <Button type="submit" disabled={loading}>{loading ? 'Saving...' : 'Save Person'}</Button>
+          <div className="pt-6 border-t border-border space-y-4">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button type="button" variant="ghost" onClick={() => navigate(-1)} className="w-full sm:w-1/3 h-12">Cancel</Button>
+              <div className="flex-1 w-full relative">
+                <Button type="submit" disabled={loading} className="w-full h-12 text-base font-bold">
+                  {loading ? 'Saving Person...' : 'Save Person'}
+                </Button>
+              </div>
+            </div>
+            {(loading || uploadProgress > 0) && (
+              <div className="w-full space-y-1 text-center">
+                <div className="text-xs font-semibold text-text-secondary">
+                  {uploadProgress === 0 ? "Uploading photo..." : `Photo Upload: ${uploadProgress}%`}
+                </div>
+                <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                  <div className="bg-primary h-2 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
+                </div>
+              </div>
+            )}
           </div>
         </form>
       </Card>
