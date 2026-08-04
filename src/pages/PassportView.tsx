@@ -5,6 +5,7 @@ import { getInitials } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { FiUser, FiCalendar, FiMapPin, FiInfo } from 'react-icons/fi';
 import { renderGroupedPersonOptions } from '@/lib/personUtils';
+import { PlaceWithFlag } from '@/components/ui/PlaceWithFlag';
 
 interface GroupedRelative {
   person: Person;
@@ -216,7 +217,9 @@ export function PassportView() {
                       <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1">
                         <FiMapPin /> Place of Birth
                       </label>
-                      <p className="font-medium text-slate-800 mt-1">{centerPerson.birthPlace}</p>
+                      <p className="font-medium text-slate-800 mt-1">
+                        <PlaceWithFlag place={centerPerson.birthPlace} />
+                      </p>
                     </div>
                   )}
 

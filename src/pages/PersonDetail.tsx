@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { getInitials, formatPersonAge } from '@/lib/utils';
 import { FiArrowLeft, FiUser, FiHeart, FiUsers, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { Person } from '@/types';
+import { PlaceWithFlag } from '@/components/ui/PlaceWithFlag';
 import { usePersons } from '@/hooks/usePersons';
 import { useAuth } from '@/hooks/useAuth';
 import { logActivity } from '@/lib/logger';
@@ -117,11 +118,11 @@ export function PersonDetail() {
           <div className="space-y-4 pt-6 border-t border-border mt-4 w-full">
             <div className="flex justify-between border-b border-border pb-2">
               <span className="text-text-secondary text-xs uppercase tracking-widest font-medium">Born</span>
-              <span className="text-sm font-semibold">{person.birthDate || 'Unknown'} {person.birthPlace && `• ${person.birthPlace}`}</span>
+              <span className="text-sm font-semibold">{person.birthDate || 'Unknown'} {person.birthPlace && <><span className="mx-1">•</span><PlaceWithFlag place={person.birthPlace} /></>}</span>
             </div>
             <div className="flex justify-between border-b border-border pb-2">
               <span className="text-text-secondary text-xs uppercase tracking-widest font-medium">Died</span>
-              <span className="text-sm font-semibold">{person.deathDate || (person.isLiving ? 'Living' : 'Unknown')} {person.deathPlace && `• ${person.deathPlace}`}</span>
+              <span className="text-sm font-semibold">{person.deathDate || (person.isLiving ? 'Living' : 'Unknown')} {person.deathPlace && <><span className="mx-1">•</span><PlaceWithFlag place={person.deathPlace} /></>}</span>
             </div>
           </div>
 

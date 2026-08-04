@@ -4,6 +4,7 @@ import { usePersons } from '@/hooks/usePersons';
 import { getInitials } from '@/lib/utils';
 import { FiUserPlus, FiUserMinus } from 'react-icons/fi';
 import { Person } from '@/types';
+import { PlaceWithFlag } from '@/components/ui/PlaceWithFlag';
 
 type TimelineEvent = {
   id: string;
@@ -114,8 +115,9 @@ export function Timeline() {
                             <h4 className="font-display font-bold text-xs text-text-primary truncate">
                               {evt.person.firstName} {evt.person.lastName}
                             </h4>
-                            <p className="text-[10px] text-text-secondary mt-0.5 truncate">
-                              {evt.year} {evt.location ? `• ${evt.location}` : ''}
+                            <p className="text-[10px] text-text-secondary mt-0.5 truncate flex items-center justify-center gap-1">
+                              <span>{evt.year}</span>
+                              {evt.location && <><span className="mx-0.5">•</span><PlaceWithFlag place={evt.location} /></>}
                             </p>
                           </div>
                           <div className="w-0.5 h-6 bg-slate-300 group-hover:bg-primary transition-colors"></div>
@@ -159,8 +161,9 @@ export function Timeline() {
                             <h4 className="font-display font-bold text-xs text-text-primary truncate">
                               {evt.person.firstName} {evt.person.lastName}
                             </h4>
-                            <p className="text-[10px] text-text-secondary mt-0.5 truncate">
-                              {evt.year} {evt.location ? `• ${evt.location}` : ''}
+                            <p className="text-[10px] text-text-secondary mt-0.5 truncate flex items-center justify-center gap-1">
+                              <span>{evt.year}</span>
+                              {evt.location && <><span className="mx-0.5">•</span><PlaceWithFlag place={evt.location} /></>}
                             </p>
                           </div>
                         </div>

@@ -2,7 +2,7 @@ import React from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Link } from 'react-router-dom';
-import { Globe } from '@/components/Globe';
+import { GlobeDemo } from '@/components/ui/GlobeDemo';
 
 export function About() {
   return (
@@ -45,10 +45,7 @@ export function About() {
         </div>
       </Card>
 
-      <div className="relative flex h-[380px] sm:h-[450px] w-full max-w-xl mx-auto items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white px-10 pb-40 pt-8 shadow-xl my-8">
-        <Globe className="top-24 sm:top-28" />
-        <div className="pointer-events-none absolute inset-0 h-full bg-[radial-gradient(circle_at_50%_200%,rgba(0,0,0,0.08),rgba(255,255,255,0))]" />
-      </div>
+      <GlobeDemo />
     </div>
   );
 }

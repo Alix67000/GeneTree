@@ -8,6 +8,7 @@ import { COLLECTIONS } from '@/lib/constants';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { AutocompletePerson } from '@/components/AutocompletePerson';
+import { CountrySelectWithFlags } from '@/components/CountrySelectWithFlags';
 import { useFamily } from '@/hooks/useFamily';
 import { usePersons } from '@/hooks/usePersons';
 import { Gender, Person } from '@/types';
@@ -338,12 +339,11 @@ export function AddPerson() {
     try {
       let finalPhotoUrl = formData.photoUrl;
 
+      // N'upload vers Firebase Storage QUE si l'utilisateur a explicitement sélectionné ou recadré un nouveau fichier (photoFile !== null)
       if (photoFile) {
         try {
-          // Compress and resize image to WebP
           const compressedBlob = await compressAndResizeImage(photoFile, 600, 0.7);
           const storageRef = ref(storage, `family_photos/${Date.now()}_${photoFile.name.replace(/\.[^/.]+$/, '')}.webp`);
-          
           const uploadTask = uploadBytesResumable(storageRef, compressedBlob, { contentType: 'image/webp' });
           
           const downloadUrl = await new Promise<string>((resolve, reject) => {
@@ -368,24 +368,9 @@ export function AddPerson() {
           });
           finalPhotoUrl = downloadUrl;
         } catch (uploadError: any) {
-          console.warn('Photo upload error or timeout, falling back to local Base64 WebP:', uploadError.message);
-          setIsFallback(true);
-          setUploadProgress(50);
-          try {
-            const compressedBlob = await compressAndResizeImage(photoFile, 600, 0.7);
-            finalPhotoUrl = await blobToDataURL(compressedBlob);
-            setUploadProgress(100);
-          } catch (fallbackErr) {
-            console.error('Fallback Base64 conversion failed:', fallbackErr);
-            const proceedWithoutPhoto = window.confirm(
-              "Erreur d'envoi de la photo : Firebase Storage indisponible. Voulez-vous enregistrer la fiche sans la photo ?"
-            );
-            if (!proceedWithoutPhoto) {
-              setLoading(false);
-              return;
-            }
-            finalPhotoUrl = formData.photoUrl;
-          }
+          console.error('Photo upload error, falling back to local Base64 WebP:', uploadError);
+          const compressedBlob = await compressAndResizeImage(photoFile, 600, 0.7);
+          finalPhotoUrl = await blobToDataURL(compressedBlob);
         }
       }
 
@@ -398,7 +383,7 @@ export function AddPerson() {
 
       if (isEditing && id) {
         const docRef = doc(db, COLLECTIONS.PERSONS, id);
-        await updateDoc(docRef, payload);
+        await updateDoc(docRef, payload); // Mise à jour instantanée en quelques millisecondes si photoFile est null
         logActivity('MODIFICATION_PERSONNE', `Modification de ${formData.firstName} ${formData.lastName}`, currentUser?.email || currentUser?.displayName || 'Inconnu');
       } else {
         await addDoc(collection(db, COLLECTIONS.PERSONS), {
@@ -427,12 +412,6 @@ export function AddPerson() {
       </datalist>
       <datalist id="existing-lastnames">
         {formData.lastName.length >= 3 && uniqueLastNames.map(name => <option key={name} value={name} />)}
-      </datalist>
-      <datalist id="countries-list">
-        {(formData.birthPlace.length >= 3 || formData.deathPlace.length >= 3) &&
-          COUNTRIES_WITH_FLAGS.map(c => (
-            <option key={c.code} value={`${c.flag} ${c.name}`} />
-          ))}
       </datalist>
       <div>
         <h1 className="text-3xl font-display font-semibold text-text-primary">
@@ -527,18 +506,12 @@ export function AddPerson() {
               }}
               placeholder="YYYY/MM/DD"
             />
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-text-primary">Birth Place</label>
-              <input 
-                type="text" 
-                name="birthPlace"
-                list="countries-list"
-                placeholder="e.g. 🇮🇷 Iran, 🇫🇷 France" 
-                value={formData.birthPlace} 
-                onChange={handleChange}
-                className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
-              />
-            </div>
+            <CountrySelectWithFlags
+              label="Birth Place"
+              value={formData.birthPlace}
+              onChange={(val) => setFormData(prev => ({ ...prev, birthPlace: val }))}
+              placeholder="e.g. Tehran, Iran / Paris, France"
+            />
           </div>
 
           <div className="flex items-center gap-3 py-2">
@@ -577,18 +550,12 @@ export function AddPerson() {
                 }}
                 placeholder="YYYY/MM/DD"
               />
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">Death Place</label>
-                <input 
-                  type="text" 
-                  name="deathPlace"
-                  list="countries-list"
-                  placeholder="e.g. 🇮🇷 Iran, 🇫🇷 France" 
-                  value={formData.deathPlace} 
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 rounded-[var(--radius-button)] border border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
-                />
-              </div>
+              <CountrySelectWithFlags
+                label="Death Place"
+                value={formData.deathPlace}
+                onChange={(val) => setFormData(prev => ({ ...prev, deathPlace: val }))}
+                placeholder="e.g. Tehran, Iran / Paris, France"
+              />
             </div>
           )}
 
