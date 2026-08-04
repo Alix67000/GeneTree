@@ -85,16 +85,29 @@ export function StarNetworkView() {
 
     // Bottom (Descendants - Green)
     const children = getChildren(activeCenterId).filter(p => !addedIds.has(p.id));
+
+    // Calculate proportional width for each child based on their descendants count
+    const childWidths = children.map(c => {
+      const gc = getChildren(c.id).filter(g => !addedIds.has(g.id));
+      return Math.max(gc.length * 180, 260);
+    });
+
+    const totalChildrenWidth = childWidths.reduce((a, b) => a + b, 0);
+    let currentX = -totalChildrenWidth / 2;
+
     children.forEach((c, idx) => {
       addedIds.add(c.id);
-      const x = (idx - (children.length - 1) / 2) * 250;
-      nList.push({ id: c.id, person: c, x, y: 340, color: 'green', title: c.gender === 'male' ? 'Son' : c.gender === 'female' ? 'Daughter' : 'Child' });
+      const width = childWidths[idx];
+      const cx = currentX + width / 2;
+      currentX += width;
+
+      nList.push({ id: c.id, person: c, x: cx, y: 340, color: 'green', title: c.gender === 'male' ? 'Son' : c.gender === 'female' ? 'Daughter' : 'Child' });
       lList.push({ source: activeCenterId, target: c.id, color: '#22c55e' });
       
       const gc = getChildren(c.id).filter(g => !addedIds.has(g.id));
       gc.forEach((g, gIdx) => {
         addedIds.add(g.id);
-        const gx = x + (gIdx - (gc.length - 1) / 2) * 160;
+        const gx = cx + (gIdx - (gc.length - 1) / 2) * 170;
         nList.push({ id: g.id, person: g, x: gx, y: 580, color: 'green', title: g.gender === 'male' ? 'Grandson' : g.gender === 'female' ? 'Granddaughter' : 'Grandchild' });
         lList.push({ source: c.id, target: g.id, color: '#22c55e' });
       });
@@ -437,7 +450,7 @@ export function StarNetworkView() {
           </div>
         )}
 
-        <div className="zoom-toolbar absolute bottom-24 right-4 sm:bottom-8 sm:right-8 flex flex-col gap-1.5 bg-white/95 backdrop-blur-sm p-1.5 rounded-2xl shadow-xl border border-slate-200 z-40">
+        <div className="zoom-toolbar absolute bottom-24 left-4 sm:bottom-8 sm:right-8 flex flex-col gap-1.5 bg-white/95 backdrop-blur-sm p-1.5 rounded-2xl shadow-xl border border-border z-40">
           <button onClick={() => handleZoom(0.2)} className="w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 active:bg-slate-200 transition-colors" title="Zoom In">
             <FiZoomIn className="w-5 h-5 text-slate-700" />
           </button>

@@ -278,7 +278,7 @@ export function NetworkView() {
           </div>
         )}
 
-        <div className="zoom-toolbar absolute bottom-24 right-4 sm:bottom-8 sm:right-8 flex flex-col gap-1.5 bg-white/95 backdrop-blur-sm p-1.5 rounded-2xl shadow-xl border border-slate-200 z-40">
+        <div className="zoom-toolbar absolute bottom-24 left-4 sm:bottom-8 sm:right-8 flex flex-col gap-1.5 bg-white/95 backdrop-blur-sm p-1.5 rounded-2xl shadow-xl border border-border z-40">
           <button onClick={() => handleZoom(0.2)} className="w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 active:bg-slate-200 transition-colors" title="Zoom In">
             <FiZoomIn className="w-5 h-5 text-slate-700" />
           </button>
