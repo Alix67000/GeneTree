@@ -428,6 +428,12 @@ export function AddPerson() {
       <datalist id="existing-lastnames">
         {formData.lastName.length >= 3 && uniqueLastNames.map(name => <option key={name} value={name} />)}
       </datalist>
+      <datalist id="countries-list">
+        {(formData.birthPlace.length >= 3 || formData.deathPlace.length >= 3) &&
+          COUNTRIES_WITH_FLAGS.map(c => (
+            <option key={c.code} value={`${c.flag} ${c.name}`} />
+          ))}
+      </datalist>
       <div>
         <h1 className="text-3xl font-display font-semibold text-text-primary">
           {isEditing ? 'Edit Person' : 'Add New Person'}

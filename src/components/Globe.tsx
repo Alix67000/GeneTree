@@ -7,12 +7,12 @@ const GLOBE_CONFIG: Omit<COBEOptions, "width" | "height"> = {
   phi: 0,
   theta: 0.3,
   dark: 0,
-  diffuse: 0.4,
+  diffuse: 1.2,
   mapSamples: 16000,
-  mapBrightness: 1.2,
-  baseColor: [1, 1, 1],
-  markerColor: [34 / 255, 197 / 255, 94 / 255], // Vert GeneTree
-  glowColor: [1, 1, 1],
+  mapBrightness: 6,
+  baseColor: [0.35, 0.45, 0.55], // Gris-bleu ardoise net pour la Terre
+  markerColor: [0.1, 0.75, 0.4], // Vert émeraude vif pour les marqueurs
+  glowColor: [0.88, 0.9, 0.93],  // Halo doux
   markers: [
     { location: [48.5734, 7.7521], size: 0.1 },  // Strasbourg, France
     { location: [48.8566, 2.3522], size: 0.08 }, // Paris, France
