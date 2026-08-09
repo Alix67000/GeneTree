@@ -92,10 +92,10 @@ export function Tree() {
             const coupleId = coupleMap.get(p.id)!;
             if (!nodes.has(coupleId)) {
                const [p1, p2] = coupleId.split('-');
-               nodes.set(coupleId, { id: coupleId, isCouple: true, person1: p1, person2: p2, children: [], gen, x: 0, width: 256 + 40 + 256 });
+               nodes.set(coupleId, { id: coupleId, isCouple: true, person1: p1, person2: p2, children: [], gen, x: 0, width: 150 + 20 + 150 });
             }
          } else {
-            nodes.set(p.id, { id: p.id, isCouple: false, person1: p.id, children: [], gen, x: 0, width: 256 });
+            nodes.set(p.id, { id: p.id, isCouple: false, person1: p.id, children: [], gen, x: 0, width: 150 });
          }
       });
 
@@ -133,7 +133,7 @@ export function Tree() {
       });
 
       // Top-Down Subtree Layout
-      const NODE_SPACING = 80;
+      const NODE_SPACING = 30;
       const isChild = new Set<string>();
       nodes.forEach(n => {
          n.children.forEach(c => isChild.add(c));
@@ -208,8 +208,8 @@ export function Tree() {
       const xPosMap = new Map<string, number>();
       nodes.forEach(n => {
          if (n.isCouple && n.person2) {
-            xPosMap.set(n.person1, n.x - 148);
-            xPosMap.set(n.person2, n.x + 148);
+            xPosMap.set(n.person1, n.x - 85);
+            xPosMap.set(n.person2, n.x + 85);
          } else {
             xPosMap.set(n.person1, n.x);
          }
@@ -249,7 +249,7 @@ export function Tree() {
       
       persons.forEach(p => {
         const x = xPos.get(p.id) || 0;
-        const y = (levels.get(p.id) || 0) * 300;
+        const y = (levels.get(p.id) || 0) * 190;
         if (x < minX) minX = x;
         if (x > maxX) maxX = x;
         if (y < minY) minY = y;
@@ -283,7 +283,7 @@ export function Tree() {
     setCentralPersonId(id);
     setHighlightedPersonId(id);
     const x = xPos.get(id) || 0;
-    const y = (levels.get(id) || 0) * 300;
+    const y = (levels.get(id) || 0) * 190;
     centerOnPoint(x, y, 1); // Reset scale to 1 on selection for clear view
     setTimeout(() => {
       setHighlightedPersonId(null);
@@ -438,9 +438,9 @@ export function Tree() {
         <span className={`text-[10px] font-bold uppercase tracking-wider mb-2 px-3 py-1 rounded-full border shadow-xs transition-colors ${badgeStyle}`}>
           {roleLabel}
         </span>
-        <Card className={`transition-all w-44 sm:w-64 flex flex-col items-center text-center bg-white border ${isCentral ? 'ring-4 ring-primary/30 border-primary shadow-lg' : isFocused ? 'ring-2 ring-primary border-primary shadow-xl' : 'border-border/80 hover:shadow-md cursor-pointer'}`}>
-          <div className="flex flex-col items-center text-center p-3 sm:p-4 space-y-2.5 w-full">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-accent bg-border ring-2 ring-white shadow flex items-center justify-center text-base sm:text-lg font-display font-semibold text-text-primary overflow-hidden shrink-0">
+        <Card className={`transition-all w-[150px] flex flex-col items-center text-center bg-white border ${isCentral ? 'ring-4 ring-primary/30 border-primary shadow-lg' : isFocused ? 'ring-2 ring-primary border-primary shadow-xl' : 'border-border/80 hover:shadow-md cursor-pointer'}`}>
+          <div className="flex flex-col items-center text-center p-2.5 space-y-2.5 w-full">
+            <div className="w-12 h-12 rounded-full border-2 border-accent bg-border ring-2 ring-white shadow flex items-center justify-center text-base sm:text-lg font-display font-semibold text-text-primary overflow-hidden shrink-0">
               {p.photoUrl ? (
                 <img src={p.photoUrl} alt={`${p.firstName} ${p.lastName}`} className="w-full h-full object-cover" />
               ) : (
@@ -634,10 +634,10 @@ export function Tree() {
                 const paths = [];
                 if (node.children.length > 0) {
                   const parentX = node.x;
-                  const parentY = node.gen * 300;
-                  const offset = 120; // drop down from center
+                  const parentY = node.gen * 190;
+                  const offset = 65; // drop down from center
                   const startY = parentY + offset;
-                  const midY = startY + 60; // horizontal line Y
+                  const midY = startY + 30; // horizontal line Y
                   
                   const isActive = focusedPersonId ? (
                     node.person1 === focusedPersonId || 
@@ -701,7 +701,7 @@ export function Tree() {
                   
                   childTargets.forEach(({ cid, childNode, targetX }) => {
                      if (!childNode) return;
-                     const childY = childNode.gen * 300;
+                     const childY = childNode.gen * 190;
                      const childActive = isActive || (focusedPersonId && (childNode.person1 === focusedPersonId || childNode.person2 === focusedPersonId));
 
                      paths.push(
@@ -718,14 +718,14 @@ export function Tree() {
                 if (node.isCouple && node.person2) {
                   const p1X = xPos.get(node.person1) || 0;
                   const p2X = xPos.get(node.person2) || 0;
-                  const y = node.gen * 300;
+                  const y = node.gen * 190;
                   
                   const isCoupleActive = focusedPersonId ? (node.person1 === focusedPersonId || node.person2 === focusedPersonId) : false;
                   
                   paths.push(
                     <g key={`${node.id}-couple`}>
                       <path 
-                        d={`M ${Math.min(p1X, p2X) + 130} ${y} L ${Math.max(p1X, p2X) - 130} ${y}`}
+                        d={`M ${Math.min(p1X, p2X) + 75} ${y} L ${Math.max(p1X, p2X) - 75} ${y}`}
                         className={`fill-none stroke-2 transition-all duration-300 ${isCoupleActive ? 'stroke-rose-400 animate-flow' : 'stroke-rose-200 stroke-dasharray-[4_4]'}`}
                       />
                       <rect x={node.x - 12} y={y - 12} width="24" height="24" rx="12" fill="#fff" className="stroke-rose-200 stroke-1" />
@@ -738,7 +738,7 @@ export function Tree() {
               </svg>
               {persons.map(p => {
                 const x = xPos.get(p.id) || 0;
-                const y = (levels.get(p.id) || 0) * 300;
+                const y = (levels.get(p.id) || 0) * 190;
                 
                 let role = 'Membre';
                 let badgeStyle = 'bg-slate-100 text-slate-700 border-slate-200';
