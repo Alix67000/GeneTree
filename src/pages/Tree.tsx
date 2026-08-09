@@ -14,7 +14,7 @@ import { renderGroupedPersonOptions } from '@/lib/personUtils';
 
 export function Tree() {
   const { persons, loading } = usePersons();
-  const [viewMode, setViewMode] = useState<'tree' | 'canvas' | 'grid' | 'dynamic'>('tree');
+  const [viewMode, setViewMode] = useState<'tree' | 'canvas' | 'grid'>('tree');
   const [centralPersonId, setCentralPersonId] = useState<string>('');
   const [focusedPersonId, setFocusedPersonId] = useState<string | null>(null);
   const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
@@ -215,7 +215,7 @@ export function Tree() {
          }
       });
 
-      if (viewMode === 'dynamic' && centralPersonId) {
+      if (viewMode !== 'grid' && centralPersonId) {
          const cp = persons.find(p => p.id === centralPersonId);
          if (cp) {
              const dynXPos = new Map<string, number>();
@@ -372,7 +372,7 @@ export function Tree() {
       
       persons.forEach(p => {
         const x = xPos.get(p.id) || 0;
-        const y = (levels.get(p.id) || 0) * (viewMode === 'dynamic' ? 180 : 200);
+        const y = (levels.get(p.id) || 0) * (viewMode !== 'grid' ? 180 : 200);
         if (x < minX) minX = x;
         if (x > maxX) maxX = x;
         if (y < minY) minY = y;
@@ -403,7 +403,7 @@ export function Tree() {
   }, [persons, xPos, levels]);
 
   useEffect(() => {
-    if (viewMode === 'dynamic') {
+    if (viewMode !== 'grid') {
       centerOnPoint(0, 0, 1);
     }
   }, [viewMode]);
@@ -412,7 +412,7 @@ export function Tree() {
     setCentralPersonId(id);
     setHighlightedPersonId(id);
     setFocusedPersonId(id);
-    setViewMode('dynamic'); // Bascule automatiquement sur la disposition dynamique centrée
+    setViewMode('canvas'); // Bascule automatiquement sur la disposition dynamique centrée
     centerOnPoint(0, 0, 1); // Centre l'écran parfaitement sur l'origine (0, 0)
     setTimeout(() => {
       setHighlightedPersonId(null);
@@ -633,14 +633,6 @@ export function Tree() {
               Canevas Infini
             </button>
             <button
-              onClick={() => setViewMode('dynamic')}
-              className={`px-3 h-full rounded-md text-xs font-medium transition-colors ${
-                viewMode === 'dynamic' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary'
-              }`}
-            >
-              Famille Proche
-            </button>
-            <button
               onClick={() => setViewMode('grid')}
               className={`px-3 h-full rounded-md text-xs font-medium transition-colors ${
                 viewMode === 'grid' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary'
@@ -763,7 +755,7 @@ export function Tree() {
                 const paths = [];
                 if (node.children.length > 0) {
                   const parentX = node.x;
-                  const parentY = node.gen * (viewMode === 'dynamic' ? 180 : 200);
+                  const parentY = node.gen * (viewMode !== 'grid' ? 180 : 200);
                   const offset = 65; // drop down from center
                   const startY = parentY + offset;
                   const midY = startY + 30; // horizontal line Y
@@ -830,7 +822,7 @@ export function Tree() {
                   
                   childTargets.forEach(({ cid, childNode, targetX }) => {
                      if (!childNode) return;
-                     const childY = childNode.gen * (viewMode === 'dynamic' ? 180 : 200);
+                     const childY = childNode.gen * (viewMode !== 'grid' ? 180 : 200);
                      const childActive = isActive || (focusedPersonId && (childNode.person1 === focusedPersonId || childNode.person2 === focusedPersonId));
 
                      paths.push(
@@ -846,7 +838,7 @@ export function Tree() {
                 if (node.isCouple && node.person2) {
                   const p1X = xPos.get(node.person1) || 0;
                   const p2X = xPos.get(node.person2) || 0;
-                  const y = node.gen * (viewMode === 'dynamic' ? 180 : 200);
+                  const y = node.gen * (viewMode !== 'grid' ? 180 : 200);
                   
                   // Vérifie si l'un des deux conjoints fait partie de l'entourage illuminé
                   const isCoupleConnected = focusedPersonId ? (
@@ -871,9 +863,9 @@ export function Tree() {
               })}
               </svg>
               {persons.map(p => {
-                if (viewMode === 'dynamic' && !xPos.has(p.id)) return null;
+                if (viewMode !== 'grid' && !xPos.has(p.id)) return null;
                 const x = xPos.get(p.id) || 0;
-                const y = (levels.get(p.id) || 0) * (viewMode === 'dynamic' ? 180 : 200);
+                const y = (levels.get(p.id) || 0) * (viewMode !== 'grid' ? 180 : 200);
                 
                 let role = 'Membre';
                 let badgeStyle = 'bg-slate-100 text-slate-700 border-slate-200';
