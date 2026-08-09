@@ -33,6 +33,7 @@ export function Admin() {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
+  const [userToDelete, setUserToDelete] = useState<{ id: string, emailOrUsername: string } | null>(null);
   
   const [formData, setFormData] = useState({
     emailOrUsername: '',
@@ -117,17 +118,8 @@ export function Admin() {
     }
   };
 
-  const handleDelete = async (id: string, emailOrUsername: string) => {
-    if (window.confirm("Êtes-vous sûr de vouloir supprimer cet accès ?")) {
-      try {
-        await deleteDoc(doc(db, 'allowed_users', id));
-        logActivity('SUPPRESSION_MEMBRE', `Suppression du compte membre ${emailOrUsername}`, currentUser?.email || 'Inconnu');
-        setUsers(prev => prev.filter(u => u.id !== id));
-        loadLogs();
-      } catch (err) {
-        console.error("Error deleting user:", err);
-      }
-    }
+  const handleDelete = (id: string, emailOrUsername: string) => {
+    setUserToDelete({ id, emailOrUsername });
   };
 
   if (!currentUser) return <Navigate to="/" />;
@@ -283,6 +275,45 @@ export function Admin() {
           </Card>
         </div>
       </div>
+      
+      {userToDelete && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-surface border border-border rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center">
+            <h3 className="font-display text-lg font-bold text-text-primary">Supprimer l'accès</h3>
+            <p className="text-sm text-text-secondary">
+              Êtes-vous sûr de vouloir supprimer l'accès de <strong>{userToDelete.emailOrUsername}</strong> ?
+            </p>
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setUserToDelete(null)}
+                className="flex-1"
+              >
+                Annuler
+              </Button>
+              <Button
+                size="sm"
+                onClick={async () => {
+                  try {
+                    await deleteDoc(doc(db, 'allowed_users', userToDelete.id));
+                    logActivity('SUPPRESSION_MEMBRE', `Suppression du compte membre ${userToDelete.emailOrUsername}`, currentUser?.email || 'Inconnu');
+                    setUsers(prev => prev.filter(u => u.id !== userToDelete.id));
+                    loadLogs();
+                  } catch (err) {
+                    console.error("Error deleting user:", err);
+                  } finally {
+                    setUserToDelete(null);
+                  }
+                }}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+              >
+                Supprimer
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -23,6 +23,7 @@ export function PersonDetail() {
   const { persons } = usePersons();
   const [person, setPerson] = useState<Person | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     const fetchPerson = async () => {
@@ -42,35 +43,13 @@ export function PersonDetail() {
     fetchPerson();
   }, [id]);
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!isAdmin) {
       alert("Accès refusé : Seul l'administrateur de la famille (Ali Ahmadi) peut supprimer une fiche.");
       return;
     }
     if (!id || !person) return;
-    const confirmed = window.confirm(
-      `Êtes-vous sûr de vouloir supprimer définitivement ${person.firstName} ${person.lastName} de l'arbre familial ? Cette action est irréversible.`
-    );
-    if (!confirmed) return;
-
-    try {
-      // Delete storage photo if exists
-      if (person.photoUrl) {
-        try {
-          const imageRef = ref(storage, person.photoUrl);
-          await deleteObject(imageRef);
-        } catch (storageErr) {
-          console.warn('Could not delete storage object or already deleted:', storageErr);
-        }
-      }
-
-      await deleteDoc(doc(db, COLLECTIONS.PERSONS, id));
-      logActivity('SUPPRESSION_PERSONNE', `Suppression de ${person.firstName} ${person.lastName}`, currentUser?.email || currentUser?.displayName || 'Inconnu');
-      navigate('/tree');
-    } catch (error) {
-      console.error('Error deleting person:', error);
-      alert('Failed to delete person.');
-    }
+    setShowDeleteModal(true);
   };
 
   if (loading) return <div className="flex justify-center p-12"><div className="animate-pulse w-8 h-8 rounded-full bg-primary/20"></div></div>;
@@ -201,6 +180,49 @@ export function PersonDetail() {
           )}
         </div>
       </Card>
+      
+      {showDeleteModal && person && id && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-surface border border-border rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center">
+            <h3 className="font-display text-lg font-bold text-text-primary">Supprimer la personne</h3>
+            <p className="text-sm text-text-secondary">
+              Êtes-vous sûr de vouloir supprimer définitivement <strong>{person.firstName} {person.lastName}</strong> de l'arbre familial ? Cette action est irréversible.
+            </p>
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDeleteModal(false)}
+                className="flex-1"
+              >
+                Annuler
+              </Button>
+              <Button
+                size="sm"
+                onClick={async () => {
+                  setShowDeleteModal(false);
+                  try {
+                    if (person.photoUrl) {
+                      try {
+                        const imageRef = ref(storage, person.photoUrl);
+                        await deleteObject(imageRef);
+                      } catch (e) {}
+                    }
+                    await deleteDoc(doc(db, COLLECTIONS.PERSONS, id));
+                    logActivity('SUPPRESSION_PERSONNE', `Suppression de ${person.firstName} ${person.lastName}`, currentUser?.email || currentUser?.displayName || 'Inconnu');
+                    navigate('/tree');
+                  } catch (err) {
+                    console.error('Delete failed:', err);
+                  }
+                }}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+              >
+                Supprimer
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
