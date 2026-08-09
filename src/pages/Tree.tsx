@@ -418,9 +418,24 @@ export function Tree() {
     if (!focusedPersonId) return false;
     if (focusedPersonId === pId) return true;
     const p = persons.find(per => per.id === focusedPersonId);
-    if (!p) return false;
-    return p.parentId1 === pId || p.parentId2 === pId || p.spouseId === pId || 
-           persons.some(c => (c.parentId1 === focusedPersonId || c.parentId2 === focusedPersonId) && c.id === pId);
+    const other = persons.find(per => per.id === pId);
+    if (!p || !other) return false;
+
+    // 1. Parents directs
+    if (p.parentId1 === pId || p.parentId2 === pId) return true;
+    // 2. Conjoint(e)
+    if (p.spouseId === pId || other.spouseId === focusedPersonId) return true;
+    // 3. Enfants directs
+    if (other.parentId1 === focusedPersonId || other.parentId2 === focusedPersonId) return true;
+    // 4. Frères et sœurs (Siblings : partageant au moins un parent)
+    if (
+      (p.parentId1 && (other.parentId1 === p.parentId1 || other.parentId2 === p.parentId1)) ||
+      (p.parentId2 && (other.parentId1 === p.parentId2 || other.parentId2 === p.parentId2))
+    ) {
+      return true;
+    }
+
+    return false;
   };
 
   const renderPersonCard = (p: Person, roleLabel: string, badgeStyle: string, isCentral = false) => {
