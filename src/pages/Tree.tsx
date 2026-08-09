@@ -92,7 +92,7 @@ export function Tree() {
             const coupleId = coupleMap.get(p.id)!;
             if (!nodes.has(coupleId)) {
                const [p1, p2] = coupleId.split('-');
-               nodes.set(coupleId, { id: coupleId, isCouple: true, person1: p1, person2: p2, children: [], gen, x: 0, width: 110 + 20 + 110 });
+               nodes.set(coupleId, { id: coupleId, isCouple: true, person1: p1, person2: p2, children: [], gen, x: 0, width: 110 + 50 + 110 });
             }
          } else {
             nodes.set(p.id, { id: p.id, isCouple: false, person1: p.id, children: [], gen, x: 0, width: 110 });
@@ -133,7 +133,7 @@ export function Tree() {
       });
 
       // Top-Down Subtree Layout
-      const NODE_SPACING = 40;
+      const NODE_SPACING = 60;
       const isChild = new Set<string>();
       nodes.forEach(n => {
          n.children.forEach(c => isChild.add(c));
@@ -249,7 +249,7 @@ export function Tree() {
       
       persons.forEach(p => {
         const x = xPos.get(p.id) || 0;
-        const y = (levels.get(p.id) || 0) * 140;
+        const y = (levels.get(p.id) || 0) * 200;
         if (x < minX) minX = x;
         if (x > maxX) maxX = x;
         if (y < minY) minY = y;
@@ -283,7 +283,7 @@ export function Tree() {
     setCentralPersonId(id);
     setHighlightedPersonId(id);
     const x = xPos.get(id) || 0;
-    const y = (levels.get(id) || 0) * 140;
+    const y = (levels.get(id) || 0) * 200;
     centerOnPoint(x, y, 1); // Reset scale to 1 on selection for clear view
     setTimeout(() => {
       setHighlightedPersonId(null);
@@ -619,7 +619,7 @@ export function Tree() {
                 const paths = [];
                 if (node.children.length > 0) {
                   const parentX = node.x;
-                  const parentY = node.gen * 140;
+                  const parentY = node.gen * 200;
                   const offset = 65; // drop down from center
                   const startY = parentY + offset;
                   const midY = startY + 30; // horizontal line Y
@@ -686,7 +686,7 @@ export function Tree() {
                   
                   childTargets.forEach(({ cid, childNode, targetX }) => {
                      if (!childNode) return;
-                     const childY = childNode.gen * 140;
+                     const childY = childNode.gen * 200;
                      const childActive = isActive || (focusedPersonId && (childNode.person1 === focusedPersonId || childNode.person2 === focusedPersonId));
 
                      paths.push(
@@ -703,7 +703,7 @@ export function Tree() {
                 if (node.isCouple && node.person2) {
                   const p1X = xPos.get(node.person1) || 0;
                   const p2X = xPos.get(node.person2) || 0;
-                  const y = node.gen * 140;
+                  const y = node.gen * 200;
                   
                   const isCoupleActive = focusedPersonId ? (node.person1 === focusedPersonId || node.person2 === focusedPersonId) : false;
                   
@@ -723,7 +723,7 @@ export function Tree() {
               </svg>
               {persons.map(p => {
                 const x = xPos.get(p.id) || 0;
-                const y = (levels.get(p.id) || 0) * 140;
+                const y = (levels.get(p.id) || 0) * 200;
                 
                 let role = 'Membre';
                 let badgeStyle = 'bg-slate-100 text-slate-700 border-slate-200';
