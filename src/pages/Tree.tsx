@@ -92,10 +92,10 @@ export function Tree() {
             const coupleId = coupleMap.get(p.id)!;
             if (!nodes.has(coupleId)) {
                const [p1, p2] = coupleId.split('-');
-               nodes.set(coupleId, { id: coupleId, isCouple: true, person1: p1, person2: p2, children: [], gen, x: 0, width: 150 + 20 + 150 });
+               nodes.set(coupleId, { id: coupleId, isCouple: true, person1: p1, person2: p2, children: [], gen, x: 0, width: 110 + 20 + 110 });
             }
          } else {
-            nodes.set(p.id, { id: p.id, isCouple: false, person1: p.id, children: [], gen, x: 0, width: 150 });
+            nodes.set(p.id, { id: p.id, isCouple: false, person1: p.id, children: [], gen, x: 0, width: 110 });
          }
       });
 
@@ -133,7 +133,7 @@ export function Tree() {
       });
 
       // Top-Down Subtree Layout
-      const NODE_SPACING = 30;
+      const NODE_SPACING = 40;
       const isChild = new Set<string>();
       nodes.forEach(n => {
          n.children.forEach(c => isChild.add(c));
@@ -208,8 +208,8 @@ export function Tree() {
       const xPosMap = new Map<string, number>();
       nodes.forEach(n => {
          if (n.isCouple && n.person2) {
-            xPosMap.set(n.person1, n.x - 85);
-            xPosMap.set(n.person2, n.x + 85);
+            xPosMap.set(n.person1, n.x - 65);
+            xPosMap.set(n.person2, n.x + 65);
          } else {
             xPosMap.set(n.person1, n.x);
          }
@@ -249,7 +249,7 @@ export function Tree() {
       
       persons.forEach(p => {
         const x = xPos.get(p.id) || 0;
-        const y = (levels.get(p.id) || 0) * 190;
+        const y = (levels.get(p.id) || 0) * 140;
         if (x < minX) minX = x;
         if (x > maxX) maxX = x;
         if (y < minY) minY = y;
@@ -283,7 +283,7 @@ export function Tree() {
     setCentralPersonId(id);
     setHighlightedPersonId(id);
     const x = xPos.get(id) || 0;
-    const y = (levels.get(id) || 0) * 190;
+    const y = (levels.get(id) || 0) * 140;
     centerOnPoint(x, y, 1); // Reset scale to 1 on selection for clear view
     setTimeout(() => {
       setHighlightedPersonId(null);
@@ -427,56 +427,41 @@ export function Tree() {
     const isFocused = focusedPersonId ? isConnectedToFocused(p.id) : false;
     const isDimmed = focusedPersonId ? !isFocused : false;
     const isHighlighted = highlightedPersonId === p.id;
-    const cParentsCount = (p.parentId1 ? 1 : 0) + (p.parentId2 ? 1 : 0);
-    const cChildrenCount = persons.filter(c => c.parentId1 === p.id || c.parentId2 === p.id).length;
 
     return (
       <div 
         className={`flex flex-col items-center transition-all duration-300 ${isDimmed ? 'opacity-30 grayscale pointer-events-none' : 'opacity-100'} ${isHighlighted ? 'scale-105 ring-4 ring-accent rounded-2xl p-1 bg-accent/10 z-20' : 'z-10'}`}
-        onClick={(e) => { e.stopPropagation(); setFocusedPersonId(p.id); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          setCentralPersonId(p.id);
+          setFocusedPersonId(p.id);
+        }}
       >
-        <span className={`text-[10px] font-bold uppercase tracking-wider mb-2 px-3 py-1 rounded-full border shadow-xs transition-colors ${badgeStyle}`}>
+        <span className={`text-[9px] font-bold uppercase tracking-wider mb-1.5 px-2.5 py-0.5 rounded-full border shadow-xs transition-colors ${badgeStyle}`}>
           {roleLabel}
         </span>
-        <Card className={`transition-all w-[150px] flex flex-col items-center text-center bg-white border ${isCentral ? 'ring-4 ring-primary/30 border-primary shadow-lg' : isFocused ? 'ring-2 ring-primary border-primary shadow-xl' : 'border-border/80 hover:shadow-md cursor-pointer'}`}>
-          <div className="flex flex-col items-center text-center p-2.5 space-y-2.5 w-full">
-            <div className="w-12 h-12 rounded-full border-2 border-accent bg-border ring-2 ring-white shadow flex items-center justify-center text-base sm:text-lg font-display font-semibold text-text-primary overflow-hidden shrink-0">
-              {p.photoUrl ? (
-                <img src={p.photoUrl} alt={`${p.firstName} ${p.lastName}`} className="w-full h-full object-cover" />
-              ) : (
-                getInitials(p.firstName, p.lastName)
-              )}
-            </div>
+        <Card className={`relative transition-all w-[110px] p-2 flex flex-col items-center text-center bg-white border ${isCentral ? 'ring-4 ring-primary/40 border-primary shadow-lg' : isFocused ? 'ring-2 ring-primary border-primary shadow-md' : 'border-border/80 hover:shadow-md cursor-pointer'}`}>
+          <Link
+            to={`/person/${p.id}`}
+            onClick={(e) => e.stopPropagation()}
+            title="Ouvrir la fiche"
+            className="absolute top-1 right-1 text-text-secondary/60 hover:text-primary text-xs p-0.5"
+          >
+            👁
+          </Link>
 
-            <div className="w-full truncate px-1">
-              <h3 className="font-display font-bold text-sm sm:text-base text-text-primary truncate">
-                {p.firstName} {p.lastName}
-              </h3>
-              <p className="text-[11px] text-text-secondary mt-0.5 font-medium truncate">
-                {formatPersonAge(p.birthDate, p.deathDate, p.isLiving)}
-              </p>
-            </div>
+          <div className="w-12 h-12 rounded-full border-2 border-accent bg-border ring-2 ring-white shadow flex items-center justify-center text-sm font-display font-semibold text-text-primary overflow-hidden shrink-0 my-1">
+            {p.photoUrl ? (
+              <img src={p.photoUrl} alt={`${p.firstName} ${p.lastName}`} className="w-full h-full object-cover" />
+            ) : (
+              getInitials(p.firstName, p.lastName)
+            )}
+          </div>
 
-            <div className="w-full pt-1.5 border-t border-border/60 flex items-center justify-center gap-2">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setCentralPersonId(p.id);
-                }}
-                className="flex-1 h-8 px-2 inline-flex items-center justify-center gap-1 bg-background border border-border rounded-md text-[11px] font-medium text-text-primary hover:bg-surface-hover transition-colors"
-              >
-                ⌖ Centrer
-              </button>
-              <Link
-                to={`/person/${p.id}`}
-                onClick={(e) => e.stopPropagation()}
-                className="flex-1 h-8 px-2 inline-flex items-center justify-center gap-1 bg-primary text-white rounded-md text-[11px] font-medium hover:bg-primary/90 transition-colors shadow-sm"
-              >
-                👁 Fiche
-              </Link>
-            </div>
+          <div className="w-full truncate px-0.5 mt-1">
+            <h3 className="font-display font-bold text-xs text-text-primary truncate">
+              {p.firstName} {p.lastName}
+            </h3>
           </div>
         </Card>
       </div>
@@ -634,7 +619,7 @@ export function Tree() {
                 const paths = [];
                 if (node.children.length > 0) {
                   const parentX = node.x;
-                  const parentY = node.gen * 190;
+                  const parentY = node.gen * 140;
                   const offset = 65; // drop down from center
                   const startY = parentY + offset;
                   const midY = startY + 30; // horizontal line Y
@@ -701,7 +686,7 @@ export function Tree() {
                   
                   childTargets.forEach(({ cid, childNode, targetX }) => {
                      if (!childNode) return;
-                     const childY = childNode.gen * 190;
+                     const childY = childNode.gen * 140;
                      const childActive = isActive || (focusedPersonId && (childNode.person1 === focusedPersonId || childNode.person2 === focusedPersonId));
 
                      paths.push(
@@ -718,7 +703,7 @@ export function Tree() {
                 if (node.isCouple && node.person2) {
                   const p1X = xPos.get(node.person1) || 0;
                   const p2X = xPos.get(node.person2) || 0;
-                  const y = node.gen * 190;
+                  const y = node.gen * 140;
                   
                   const isCoupleActive = focusedPersonId ? (node.person1 === focusedPersonId || node.person2 === focusedPersonId) : false;
                   
@@ -738,7 +723,7 @@ export function Tree() {
               </svg>
               {persons.map(p => {
                 const x = xPos.get(p.id) || 0;
-                const y = (levels.get(p.id) || 0) * 190;
+                const y = (levels.get(p.id) || 0) * 140;
                 
                 let role = 'Membre';
                 let badgeStyle = 'bg-slate-100 text-slate-700 border-slate-200';
