@@ -14,7 +14,7 @@ import { renderGroupedPersonOptions } from '@/lib/personUtils';
 
 export function Tree() {
   const { persons, loading } = usePersons();
-  const [viewMode, setViewMode] = useState<'tree' | 'canvas' | 'grid'>('tree');
+  const [viewMode, setViewMode] = useState<'tree' | 'canvas' | 'grid' | 'dynamic'>('tree');
   const [centralPersonId, setCentralPersonId] = useState<string>('');
   const [focusedPersonId, setFocusedPersonId] = useState<string | null>(null);
   const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
@@ -215,8 +215,131 @@ export function Tree() {
          }
       });
 
+      if (viewMode === 'dynamic' && centralPersonId) {
+         const cp = persons.find(p => p.id === centralPersonId);
+         if (cp) {
+             const dynXPos = new Map<string, number>();
+             const dynGen = new Map<string, number>();
+             const dynNodes = new Map<string, TreeNode>();
+
+             const getOrCreateNode = (id: string, isCouple: boolean, p1: string, p2?: string, gen = 0) => {
+                 if (!dynNodes.has(id)) {
+                     dynNodes.set(id, { id, isCouple, person1: p1, person2: p2, children: [], gen, x: 0, width: isCouple ? 270 : 110 });
+                 }
+                 return dynNodes.get(id)!;
+             };
+
+             // Gen 0
+             dynGen.set(cp.id, 0);
+             dynXPos.set(cp.id, -65);
+             let cpNodeId = cp.id;
+             if (cp.spouseId) {
+                 dynGen.set(cp.spouseId, 0);
+                 dynXPos.set(cp.spouseId, 65);
+                 cpNodeId = [cp.id, cp.spouseId].sort().join('-');
+                 const cpNode = getOrCreateNode(cpNodeId, true, cp.id, cp.spouseId, 0);
+                 cpNode.x = 0;
+             } else {
+                 dynXPos.set(cp.id, 0);
+                 const cpNode = getOrCreateNode(cpNodeId, false, cp.id, undefined, 0);
+                 cpNode.x = 0;
+             }
+
+             // Parents (Gen -1)
+             let parentNodeId: string | null = null;
+             if (cp.parentId1 && cp.parentId2) {
+                 parentNodeId = [cp.parentId1, cp.parentId2].sort().join('-');
+                 dynGen.set(cp.parentId1, -1);
+                 dynGen.set(cp.parentId2, -1);
+                 dynXPos.set(cp.parentId1, -130);
+                 dynXPos.set(cp.parentId2, 0);
+                 const pNode = getOrCreateNode(parentNodeId, true, cp.parentId1, cp.parentId2, -1);
+                 pNode.x = -65;
+             } else if (cp.parentId1) {
+                 parentNodeId = cp.parentId1;
+                 dynGen.set(cp.parentId1, -1);
+                 dynXPos.set(cp.parentId1, -65);
+                 const pNode = getOrCreateNode(parentNodeId, false, cp.parentId1, undefined, -1);
+                 pNode.x = -65;
+             } else if (cp.parentId2) {
+                 parentNodeId = cp.parentId2;
+                 dynGen.set(cp.parentId2, -1);
+                 dynXPos.set(cp.parentId2, -65);
+                 const pNode = getOrCreateNode(parentNodeId, false, cp.parentId2, undefined, -1);
+                 pNode.x = -65;
+             }
+
+             // Siblings
+             const siblings = persons.filter(p => 
+               p.id !== cp.id && (
+                 (cp.parentId1 && (p.parentId1 === cp.parentId1 || p.parentId2 === cp.parentId1)) ||
+                 (cp.parentId2 && (p.parentId1 === cp.parentId2 || p.parentId2 === cp.parentId2))
+               )
+             );
+
+             let leftX = -230;
+             let rightX = 230;
+             siblings.forEach((sib, index) => {
+                 dynGen.set(sib.id, 0);
+                 let sibNodeId = sib.id;
+                 let sibNodeX = 0;
+                 if (index % 2 === 0) {
+                     if (sib.spouseId) {
+                         dynGen.set(sib.spouseId, 0);
+                         dynXPos.set(sib.id, leftX - 65);
+                         dynXPos.set(sib.spouseId, leftX + 65);
+                         sibNodeX = leftX;
+                         sibNodeId = [sib.id, sib.spouseId].sort().join('-');
+                         getOrCreateNode(sibNodeId, true, sib.id, sib.spouseId, 0).x = sibNodeX;
+                     } else {
+                         dynXPos.set(sib.id, leftX);
+                         sibNodeX = leftX;
+                         getOrCreateNode(sibNodeId, false, sib.id, undefined, 0).x = sibNodeX;
+                     }
+                     leftX -= 250;
+                 } else {
+                     if (sib.spouseId) {
+                         dynGen.set(sib.spouseId, 0);
+                         dynXPos.set(sib.id, rightX - 65);
+                         dynXPos.set(sib.spouseId, rightX + 65);
+                         sibNodeX = rightX;
+                         sibNodeId = [sib.id, sib.spouseId].sort().join('-');
+                         getOrCreateNode(sibNodeId, true, sib.id, sib.spouseId, 0).x = sibNodeX;
+                     } else {
+                         dynXPos.set(sib.id, rightX);
+                         sibNodeX = rightX;
+                         getOrCreateNode(sibNodeId, false, sib.id, undefined, 0).x = sibNodeX;
+                     }
+                     rightX += 250;
+                 }
+                 if (parentNodeId) {
+                     const pNode = getOrCreateNode(parentNodeId, false, '', '', -1);
+                     pNode.children.push(sibNodeId);
+                 }
+             });
+
+             if (parentNodeId) {
+                 dynNodes.get(parentNodeId)!.children.push(cpNodeId);
+             }
+
+             // Children (Gen 1)
+             const children = persons.filter(p => p.parentId1 === cp.id || p.parentId2 === cp.id);
+             const childrenCount = children.length;
+             children.forEach((child, idx) => {
+                 dynGen.set(child.id, 1);
+                 const cx = (idx - (childrenCount - 1) / 2) * 150;
+                 dynXPos.set(child.id, cx);
+                 const childNodeId = child.id;
+                 getOrCreateNode(childNodeId, false, child.id, undefined, 1).x = cx;
+                 dynNodes.get(cpNodeId)!.children.push(childNodeId);
+             });
+
+             return { xPos: dynXPos, levels: dynGen, layoutNodes: Array.from(dynNodes.values()) };
+         }
+      }
+
       return { xPos: xPosMap, levels: genMap, layoutNodes: Array.from(nodes.values()) };
-    }, [persons]);
+    }, [persons, viewMode, centralPersonId]);
 
   // Set default central person when persons load
   useEffect(() => {
@@ -249,7 +372,7 @@ export function Tree() {
       
       persons.forEach(p => {
         const x = xPos.get(p.id) || 0;
-        const y = (levels.get(p.id) || 0) * 200;
+        const y = (levels.get(p.id) || 0) * (viewMode === 'dynamic' ? 180 : 200);
         if (x < minX) minX = x;
         if (x > maxX) maxX = x;
         if (y < minY) minY = y;
@@ -279,11 +402,18 @@ export function Tree() {
     }
   }, [persons, xPos, levels]);
 
+  useEffect(() => {
+    if (viewMode === 'dynamic') {
+      centerOnPoint(0, 0, 1);
+    }
+  }, [viewMode]);
+
   const handleSelectCentral = (id: string) => {
     setCentralPersonId(id);
     setHighlightedPersonId(id);
-    const x = xPos.get(id) || 0;
-    const y = (levels.get(id) || 0) * 200;
+    setFocusedPersonId(id);
+    const x = viewMode === 'dynamic' ? 0 : (xPos.get(id) || 0);
+    const y = viewMode === 'dynamic' ? 0 : (levels.get(id) || 0) * (viewMode === 'dynamic' ? 180 : 200);
     centerOnPoint(x, y, 1); // Reset scale to 1 on selection for clear view
     setTimeout(() => {
       setHighlightedPersonId(null);
@@ -448,8 +578,7 @@ export function Tree() {
         className={`flex flex-col items-center transition-all duration-300 ${isDimmed ? 'opacity-30 grayscale pointer-events-none' : 'opacity-100'} ${isHighlighted ? 'scale-105 ring-4 ring-accent rounded-2xl p-1 bg-accent/10 z-20' : 'z-10'}`}
         onClick={(e) => {
           e.stopPropagation();
-          setCentralPersonId(p.id);
-          setFocusedPersonId(p.id);
+          handleSelectCentral(p.id);
         }}
       >
         {roleLabel && roleLabel !== 'Membre' && roleLabel !== 'Member' && (
@@ -503,6 +632,14 @@ export function Tree() {
               }`}
             >
               Canevas Infini
+            </button>
+            <button
+              onClick={() => setViewMode('dynamic')}
+              className={`px-3 h-full rounded-md text-xs font-medium transition-colors ${
+                viewMode === 'dynamic' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              Famille Proche
             </button>
             <button
               onClick={() => setViewMode('grid')}
@@ -627,7 +764,7 @@ export function Tree() {
                 const paths = [];
                 if (node.children.length > 0) {
                   const parentX = node.x;
-                  const parentY = node.gen * 200;
+                  const parentY = node.gen * (viewMode === 'dynamic' ? 180 : 200);
                   const offset = 65; // drop down from center
                   const startY = parentY + offset;
                   const midY = startY + 30; // horizontal line Y
@@ -694,7 +831,7 @@ export function Tree() {
                   
                   childTargets.forEach(({ cid, childNode, targetX }) => {
                      if (!childNode) return;
-                     const childY = childNode.gen * 200;
+                     const childY = childNode.gen * (viewMode === 'dynamic' ? 180 : 200);
                      const childActive = isActive || (focusedPersonId && (childNode.person1 === focusedPersonId || childNode.person2 === focusedPersonId));
 
                      paths.push(
@@ -710,7 +847,7 @@ export function Tree() {
                 if (node.isCouple && node.person2) {
                   const p1X = xPos.get(node.person1) || 0;
                   const p2X = xPos.get(node.person2) || 0;
-                  const y = node.gen * 200;
+                  const y = node.gen * (viewMode === 'dynamic' ? 180 : 200);
                   
                   // Vérifie si l'un des deux conjoints fait partie de l'entourage illuminé
                   const isCoupleConnected = focusedPersonId ? (
@@ -735,8 +872,9 @@ export function Tree() {
               })}
               </svg>
               {persons.map(p => {
+                if (viewMode === 'dynamic' && !xPos.has(p.id)) return null;
                 const x = xPos.get(p.id) || 0;
-                const y = (levels.get(p.id) || 0) * 200;
+                const y = (levels.get(p.id) || 0) * (viewMode === 'dynamic' ? 180 : 200);
                 
                 let role = 'Membre';
                 let badgeStyle = 'bg-slate-100 text-slate-700 border-slate-200';
