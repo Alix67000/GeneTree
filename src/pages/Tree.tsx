@@ -17,6 +17,7 @@ export function Tree() {
   const [viewMode, setViewMode] = useState<'tree' | 'canvas' | 'grid'>('tree');
   const [centralPersonId, setCentralPersonId] = useState<string>('');
   const [focusedPersonId, setFocusedPersonId] = useState<string | null>(null);
+  const [isCloseView, setIsCloseView] = useState<boolean>(false);
   const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
   
   const [highlightedPersonId, setHighlightedPersonId] = useState<string | null>(null);
@@ -215,7 +216,7 @@ export function Tree() {
          }
       });
 
-      if (viewMode !== 'grid' && centralPersonId) {
+      if (isCloseView && centralPersonId) {
          const cp = persons.find(p => p.id === centralPersonId);
          if (cp) {
              const dynXPos = new Map<string, number>();
@@ -339,7 +340,7 @@ export function Tree() {
       }
 
       return { xPos: xPosMap, levels: genMap, layoutNodes: Array.from(nodes.values()) };
-    }, [persons, viewMode, centralPersonId]);
+    }, [persons, isCloseView, centralPersonId]);
 
   // Set default central person when persons load
   useEffect(() => {
@@ -372,7 +373,7 @@ export function Tree() {
       
       persons.forEach(p => {
         const x = xPos.get(p.id) || 0;
-        const y = (levels.get(p.id) || 0) * (viewMode !== 'grid' ? 180 : 200);
+        const y = (levels.get(p.id) || 0) * (isCloseView ? 180 : 200);
         if (x < minX) minX = x;
         if (x > maxX) maxX = x;
         if (y < minY) minY = y;
@@ -403,16 +404,17 @@ export function Tree() {
   }, [persons, xPos, levels]);
 
   useEffect(() => {
-    if (viewMode !== 'grid') {
+    if (isCloseView) {
       centerOnPoint(0, 0, 1);
     }
-  }, [viewMode]);
+  }, [isCloseView]);
 
   const handleSelectCentral = (id: string) => {
     setCentralPersonId(id);
     setHighlightedPersonId(id);
     setFocusedPersonId(id);
-    setViewMode('canvas'); // Bascule automatiquement sur la disposition dynamique centrée
+    setViewMode('canvas');
+    setIsCloseView(true); // Ouvre immédiatement sa Vue Famille Proche sur un seul écran
     centerOnPoint(0, 0, 1); // Centre l'écran parfaitement sur l'origine (0, 0)
     setTimeout(() => {
       setHighlightedPersonId(null);
@@ -625,7 +627,7 @@ export function Tree() {
         <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
           <div className="inline-flex h-9 p-0.5 bg-background border border-border rounded-lg shrink-0">
             <button
-              onClick={() => setViewMode('canvas')}
+              onClick={() => { setViewMode('canvas'); setIsCloseView(false); }}
               className={`px-3 h-full rounded-md text-xs font-medium transition-colors ${
                 viewMode === 'canvas' || viewMode === 'tree' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary'
               }`}
@@ -728,6 +730,14 @@ export function Tree() {
             onTouchEnd={handleTouchEnd}
             onTouchCancel={handleTouchEnd}
           >
+            {isCloseView && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setIsCloseView(false); }}
+                className="absolute top-4 left-4 z-40 bg-white/95 backdrop-blur border border-border px-4 py-2 rounded-xl text-xs font-bold text-text-primary shadow-lg hover:bg-slate-50 transition-all cursor-pointer pointer-events-auto"
+              >
+                ← Retour à l'Arbre Global
+              </button>
+            )}
             <style>{`
               @keyframes flowDash {
                 to { stroke-dashoffset: -12; }
@@ -755,7 +765,7 @@ export function Tree() {
                 const paths = [];
                 if (node.children.length > 0) {
                   const parentX = node.x;
-                  const parentY = node.gen * (viewMode !== 'grid' ? 180 : 200);
+                  const parentY = node.gen * (isCloseView ? 180 : 200);
                   const offset = 65; // drop down from center
                   const startY = parentY + offset;
                   const midY = startY + 30; // horizontal line Y
@@ -822,7 +832,7 @@ export function Tree() {
                   
                   childTargets.forEach(({ cid, childNode, targetX }) => {
                      if (!childNode) return;
-                     const childY = childNode.gen * (viewMode !== 'grid' ? 180 : 200);
+                     const childY = childNode.gen * (isCloseView ? 180 : 200);
                      const childActive = isActive || (focusedPersonId && (childNode.person1 === focusedPersonId || childNode.person2 === focusedPersonId));
 
                      paths.push(
@@ -838,7 +848,7 @@ export function Tree() {
                 if (node.isCouple && node.person2) {
                   const p1X = xPos.get(node.person1) || 0;
                   const p2X = xPos.get(node.person2) || 0;
-                  const y = node.gen * (viewMode !== 'grid' ? 180 : 200);
+                  const y = node.gen * (isCloseView ? 180 : 200);
                   
                   // Vérifie si l'un des deux conjoints fait partie de l'entourage illuminé
                   const isCoupleConnected = focusedPersonId ? (
@@ -863,9 +873,9 @@ export function Tree() {
               })}
               </svg>
               {persons.map(p => {
-                if (viewMode !== 'grid' && !xPos.has(p.id)) return null;
+                if (isCloseView && !xPos.has(p.id)) return null;
                 const x = xPos.get(p.id) || 0;
-                const y = (levels.get(p.id) || 0) * (viewMode !== 'grid' ? 180 : 200);
+                const y = (levels.get(p.id) || 0) * (isCloseView ? 180 : 200);
                 
                 let role = 'Membre';
                 let badgeStyle = 'bg-slate-100 text-slate-700 border-slate-200';
