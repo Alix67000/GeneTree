@@ -713,15 +713,20 @@ export function Tree() {
                   const p2X = xPos.get(node.person2) || 0;
                   const y = node.gen * 200;
                   
-                  const isCoupleActive = focusedPersonId ? (node.person1 === focusedPersonId || node.person2 === focusedPersonId) : false;
+                  const isCoupleActive = focusedPersonId ? (node.person1 === focusedPersonId || node.person2 === focusedPersonId) : true;
                   
+                  // En mode focus, n'afficher que les cœurs liés à la personne sélectionnée
+                  if (focusedPersonId && !isCoupleActive) {
+                    return null;
+                  }
+
                   paths.push(
                     <g key={`${node.id}-couple`}>
                       <path 
                         d={`M ${Math.min(p1X, p2X) + 75} ${y} L ${Math.max(p1X, p2X) - 75} ${y}`}
-                        className={`fill-none stroke-2 transition-all duration-300 ${isCoupleActive ? 'stroke-rose-400 animate-flow' : 'stroke-rose-200 stroke-dasharray-[4_4]'}`}
+                        className="fill-none stroke-2 stroke-rose-400 animate-flow"
                       />
-                      <rect x={node.x - 12} y={y - 12} width="24" height="24" rx="12" fill="#fff" className="stroke-rose-200 stroke-1" />
+                      <rect x={node.x - 12} y={y - 12} width="24" height="24" rx="12" fill="#fff" className="stroke-rose-200 stroke-1 shadow-sm" />
                       <text x={node.x} y={y + 4} textAnchor="middle" fontSize="12" fill="#f43f5e">♥</text>
                     </g>
                   );
@@ -753,11 +758,7 @@ export function Tree() {
 
                 let isCardActive = true;
                 if (focusedPersonId) {
-                  const fp = persons.find(person => person.id === focusedPersonId);
-                  isCardActive = p.id === focusedPersonId || 
-                                 p.id === fp?.parentId1 || p.id === fp?.parentId2 ||
-                                 p.id === fp?.spouseId ||
-                                 p.parentId1 === focusedPersonId || p.parentId2 === focusedPersonId;
+                  isCardActive = isConnectedToFocused(p.id);
                 }
 
                 return (
