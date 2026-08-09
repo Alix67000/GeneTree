@@ -701,7 +701,6 @@ export function Tree() {
                        <path
                           key={`${node.id}-to-${cid}`}
                           d={`M ${targetX} ${midY} L ${targetX} ${childY - offset}`}
-                          markerEnd={`url(#arrow-${childActive ? 'active' : 'inactive'})`}
                           className={`fill-none stroke-2 transition-all duration-300 ${childActive ? 'stroke-primary animate-flow' : 'stroke-slate-300/60'}`}
                        />
                      );
@@ -713,23 +712,24 @@ export function Tree() {
                   const p2X = xPos.get(node.person2) || 0;
                   const y = node.gen * 200;
                   
-                  const isCoupleActive = focusedPersonId ? (node.person1 === focusedPersonId || node.person2 === focusedPersonId) : true;
+                  // Vérifie si l'un des deux conjoints fait partie de l'entourage illuminé
+                  const isCoupleConnected = focusedPersonId ? (
+                    isConnectedToFocused(node.person1) || isConnectedToFocused(node.person2)
+                  ) : true;
                   
-                  // En mode focus, n'afficher que les cœurs liés à la personne sélectionnée
-                  if (focusedPersonId && !isCoupleActive) {
-                    return null;
+                  // N'affiche le cœur que si le couple est actif/connecté, sans jamais faire return null
+                  if (isCoupleConnected) {
+                    paths.push(
+                      <g key={`${node.id}-couple`}>
+                        <path 
+                          d={`M ${Math.min(p1X, p2X) + 75} ${y} L ${Math.max(p1X, p2X) - 75} ${y}`}
+                          className="fill-none stroke-2 stroke-rose-400 animate-flow"
+                        />
+                        <rect x={node.x - 12} y={y - 12} width="24" height="24" rx="12" fill="#fff" className="stroke-rose-200 stroke-1 shadow-sm" />
+                        <text x={node.x} y={y + 4} textAnchor="middle" fontSize="12" fill="#f43f5e">♥</text>
+                      </g>
+                    );
                   }
-
-                  paths.push(
-                    <g key={`${node.id}-couple`}>
-                      <path 
-                        d={`M ${Math.min(p1X, p2X) + 75} ${y} L ${Math.max(p1X, p2X) - 75} ${y}`}
-                        className="fill-none stroke-2 stroke-rose-400 animate-flow"
-                      />
-                      <rect x={node.x - 12} y={y - 12} width="24" height="24" rx="12" fill="#fff" className="stroke-rose-200 stroke-1 shadow-sm" />
-                      <text x={node.x} y={y + 4} textAnchor="middle" fontSize="12" fill="#f43f5e">♥</text>
-                    </g>
-                  );
                 }
                 return paths;
               })}
