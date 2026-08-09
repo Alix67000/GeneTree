@@ -339,9 +339,6 @@ export function Tree() {
   const handleResetZoom = () => setTransform({ x: 0, y: 0, scale: 1 });
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget || (e.target as HTMLElement).tagName === 'svg') {
-      setFocusedPersonId(null);
-    }
     if ((e.target as HTMLElement).closest('.person-card') || (e.target as HTMLElement).closest('button')) return;
     setIsDragging(true);
     setDragStart({ x: e.clientX - transform.x, y: e.clientY - transform.y });
@@ -446,6 +443,19 @@ export function Tree() {
         (p.parentId2 && (spouse.parentId1 === p.parentId2 || spouse.parentId2 === p.parentId2))
       )) {
         return true;
+      }
+    }
+    // 6. Parents du conjoint (Beaux-parents / In-laws) & Frères/sœurs du conjoint (Beaux-frères / Belles-sœurs)
+    if (p.spouseId) {
+      const pSpouse = persons.find(per => per.id === p.spouseId);
+      if (pSpouse) {
+        if (pSpouse.parentId1 === pId || pSpouse.parentId2 === pId) return true;
+        if (
+          (pSpouse.parentId1 && (other.parentId1 === pSpouse.parentId1 || other.parentId2 === pSpouse.parentId1)) ||
+          (pSpouse.parentId2 && (other.parentId1 === pSpouse.parentId2 || other.parentId2 === pSpouse.parentId2))
+        ) {
+          return true;
+        }
       }
     }
 
