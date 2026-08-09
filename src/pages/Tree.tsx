@@ -278,17 +278,22 @@ export function Tree() {
                )
              );
 
-             let leftX = -230;
-             let rightX = 230;
+             const processedSiblings = new Set<string>();
+             let leftX = -250;
+             let rightX = 250;
              siblings.forEach((sib, index) => {
+                 if (processedSiblings.has(sib.id)) return;
+                 processedSiblings.add(sib.id);
+                 if (sib.spouseId) processedSiblings.add(sib.spouseId);
+
                  dynGen.set(sib.id, 0);
                  let sibNodeId = sib.id;
                  let sibNodeX = 0;
                  if (index % 2 === 0) {
                      if (sib.spouseId) {
                          dynGen.set(sib.spouseId, 0);
-                         dynXPos.set(sib.id, leftX - 65);
-                         dynXPos.set(sib.spouseId, leftX + 65);
+                         dynXPos.set(sib.id, leftX - 75);
+                         dynXPos.set(sib.spouseId, leftX + 75);
                          sibNodeX = leftX;
                          sibNodeId = [sib.id, sib.spouseId].sort().join('-');
                          getOrCreateNode(sibNodeId, true, sib.id, sib.spouseId, 0).x = sibNodeX;
@@ -297,12 +302,12 @@ export function Tree() {
                          sibNodeX = leftX;
                          getOrCreateNode(sibNodeId, false, sib.id, undefined, 0).x = sibNodeX;
                      }
-                     leftX -= 250;
+                     leftX -= 280;
                  } else {
                      if (sib.spouseId) {
                          dynGen.set(sib.spouseId, 0);
-                         dynXPos.set(sib.id, rightX - 65);
-                         dynXPos.set(sib.spouseId, rightX + 65);
+                         dynXPos.set(sib.id, rightX - 75);
+                         dynXPos.set(sib.spouseId, rightX + 75);
                          sibNodeX = rightX;
                          sibNodeId = [sib.id, sib.spouseId].sort().join('-');
                          getOrCreateNode(sibNodeId, true, sib.id, sib.spouseId, 0).x = sibNodeX;
@@ -311,7 +316,7 @@ export function Tree() {
                          sibNodeX = rightX;
                          getOrCreateNode(sibNodeId, false, sib.id, undefined, 0).x = sibNodeX;
                      }
-                     rightX += 250;
+                     rightX += 280;
                  }
                  if (parentNodeId) {
                      const pNode = getOrCreateNode(parentNodeId, false, '', '', -1);
@@ -554,16 +559,26 @@ export function Tree() {
 
     // 1. Parents directs
     if (p.parentId1 === pId || p.parentId2 === pId) return true;
-    // 2. Conjoint(e)
+    // 2. Conjoint(e) direct(e)
     if (p.spouseId === pId || other.spouseId === focusedPersonId) return true;
     // 3. Enfants directs
     if (other.parentId1 === focusedPersonId || other.parentId2 === focusedPersonId) return true;
-    // 4. Frères et sœurs (Siblings : partageant au moins un parent)
+    // 4. Frères et sœurs (Siblings)
     if (
       (p.parentId1 && (other.parentId1 === p.parentId1 || other.parentId2 === p.parentId1)) ||
       (p.parentId2 && (other.parentId1 === p.parentId2 || other.parentId2 === p.parentId2))
     ) {
       return true;
+    }
+    // 5. Conjoint(e) d'un frère ou d'une sœur (Spouse of a sibling)
+    if (other.spouseId) {
+      const spouse = persons.find(per => per.id === other.spouseId);
+      if (spouse && (
+        (p.parentId1 && (spouse.parentId1 === p.parentId1 || spouse.parentId2 === p.parentId1)) ||
+        (p.parentId2 && (spouse.parentId1 === p.parentId2 || spouse.parentId2 === p.parentId2))
+      )) {
+        return true;
+      }
     }
 
     return false;
