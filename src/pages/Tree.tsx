@@ -133,7 +133,7 @@ export function Tree() {
       });
 
       // Top-Down Subtree Layout
-      const NODE_SPACING = 60;
+      const NODE_SPACING = 25;
       const isChild = new Set<string>();
       nodes.forEach(n => {
          n.children.forEach(c => isChild.add(c));
@@ -201,7 +201,7 @@ export function Tree() {
       roots.forEach(r => {
          if (!visitedAssign.has(r.id)) {
              assignXPositions(r.id, currentRootX);
-             currentRootX += nodes.get(r.id)!.subtreeWidth! + NODE_SPACING;
+             currentRootX += nodes.get(r.id)!.subtreeWidth! + 40;
          }
       });
 
@@ -437,19 +437,12 @@ export function Tree() {
           setFocusedPersonId(p.id);
         }}
       >
-        <span className={`text-[9px] font-bold uppercase tracking-wider mb-1.5 px-2.5 py-0.5 rounded-full border shadow-xs transition-colors ${badgeStyle}`}>
-          {roleLabel}
-        </span>
+        {roleLabel && roleLabel !== 'Membre' && roleLabel !== 'Member' && (
+          <span className={`text-[9px] font-bold uppercase tracking-wider mb-1.5 px-2.5 py-0.5 rounded-full border shadow-xs transition-colors ${badgeStyle}`}>
+            {roleLabel}
+          </span>
+        )}
         <Card className={`relative transition-all w-[110px] p-2 flex flex-col items-center text-center bg-white border ${isCentral ? 'ring-4 ring-primary/40 border-primary shadow-lg' : isFocused ? 'ring-2 ring-primary border-primary shadow-md' : 'border-border/80 hover:shadow-md cursor-pointer'}`}>
-          <Link
-            to={`/person/${p.id}`}
-            onClick={(e) => e.stopPropagation()}
-            title="Ouvrir la fiche"
-            className="absolute top-1 right-1 text-text-secondary/60 hover:text-primary text-xs p-0.5"
-          >
-            👁
-          </Link>
-
           <div className="w-12 h-12 rounded-full border-2 border-accent bg-border ring-2 ring-white shadow flex items-center justify-center text-sm font-display font-semibold text-text-primary overflow-hidden shrink-0 my-1">
             {p.photoUrl ? (
               <img src={p.photoUrl} alt={`${p.firstName} ${p.lastName}`} className="w-full h-full object-cover" />
