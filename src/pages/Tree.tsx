@@ -412,9 +412,8 @@ export function Tree() {
     setCentralPersonId(id);
     setHighlightedPersonId(id);
     setFocusedPersonId(id);
-    const x = viewMode === 'dynamic' ? 0 : (xPos.get(id) || 0);
-    const y = viewMode === 'dynamic' ? 0 : (levels.get(id) || 0) * (viewMode === 'dynamic' ? 180 : 200);
-    centerOnPoint(x, y, 1); // Reset scale to 1 on selection for clear view
+    setViewMode('dynamic'); // Bascule automatiquement sur la disposition dynamique centrée
+    centerOnPoint(0, 0, 1); // Centre l'écran parfaitement sur l'origine (0, 0)
     setTimeout(() => {
       setHighlightedPersonId(null);
     }, 2500);
