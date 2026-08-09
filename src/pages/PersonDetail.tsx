@@ -16,6 +16,8 @@ import { logActivity } from '@/lib/logger';
 
 export function PersonDetail() {
   const { currentUser } = useAuth();
+  const ADMIN_EMAIL = 'ahmadi67000@gmail.com';
+  const isAdmin = currentUser?.email === ADMIN_EMAIL;
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { persons } = usePersons();
@@ -41,6 +43,10 @@ export function PersonDetail() {
   }, [id]);
 
   const handleDelete = async () => {
+    if (!isAdmin) {
+      alert("Accès refusé : Seul l'administrateur de la famille (Ali Ahmadi) peut supprimer une fiche.");
+      return;
+    }
     if (!id || !person) return;
     const confirmed = window.confirm(
       `Êtes-vous sûr de vouloir supprimer définitivement ${person.firstName} ${person.lastName} de l'arbre familial ? Cette action est irréversible.`
@@ -87,9 +93,11 @@ export function PersonDetail() {
               <FiEdit2 className="w-3.5 h-3.5" /> Modifier
             </Button>
           </Link>
-          <Button variant="outline" size="sm" onClick={handleDelete} className="inline-flex items-center gap-1.5 text-xs text-error border-error/30 hover:bg-error/10">
-            <FiTrash2 className="w-3.5 h-3.5" /> Supprimer
-          </Button>
+          {isAdmin && (
+            <Button variant="outline" size="sm" onClick={handleDelete} className="inline-flex items-center gap-1.5 text-xs text-error border-error/30 hover:bg-error/10">
+              <FiTrash2 className="w-3.5 h-3.5" /> Supprimer
+            </Button>
+          )}
         </div>
       </div>
       
