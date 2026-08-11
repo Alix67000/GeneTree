@@ -139,7 +139,7 @@ export function Admin() {
       <div className="flex justify-between items-end">
         <div>
           <h1 className="text-3xl font-display font-bold text-text-primary">Administration</h1>
-          <p className="text-text-secondary mt-2">Gestion des accès membres</p>
+          <p className="text-text-secondary mt-2">Member Access Management</p>
         </div>
       </div>
 
@@ -198,7 +198,7 @@ export function Admin() {
               </div>
               
               <Button type="submit" disabled={formLoading} className="w-full pt-2">
-                {formLoading ? 'Creating...' : 'Créer l\'accès'}
+                {formLoading ? 'Creating...' : 'Create Access'}
               </Button>
             </form>
           </Card>
@@ -207,13 +207,13 @@ export function Admin() {
         <div className="md:col-span-2">
           <Card className="p-0 overflow-hidden">
             <div className="p-6 border-b border-border">
-              <h2 className="text-xl font-semibold">Accès existants ({users.length})</h2>
+              <h2 className="text-xl font-semibold">Existing Member Accounts ({users.length})</h2>
             </div>
             
             {loading ? (
-              <div className="p-8 text-center text-text-secondary">Chargement...</div>
+              <div className="p-8 text-center text-text-secondary">Loading...</div>
             ) : users.length === 0 ? (
-              <div className="p-8 text-center text-text-secondary">Aucun accès créé pour le moment.</div>
+              <div className="p-8 text-center text-text-secondary">No member accounts created yet.</div>
             ) : (
               <div className="divide-y divide-border">
                 {users.map(user => (
@@ -248,10 +248,10 @@ export function Admin() {
 
           <Card className="p-0 overflow-hidden mt-8">
             <div className="p-6 border-b border-border">
-              <h2 className="text-xl font-semibold">Journal d'activité récent (Logs)</h2>
+              <h2 className="text-xl font-semibold">Recent Activity Log</h2>
             </div>
             {logs.length === 0 ? (
-              <div className="p-8 text-center text-text-secondary">Aucune activité récente.</div>
+              <div className="p-8 text-center text-text-secondary">No recent activity.</div>
             ) : (
               <div className="divide-y divide-border">
                 {logs.map(log => (
@@ -266,7 +266,7 @@ export function Admin() {
                       <p className="text-sm text-text-secondary">{log.details}</p>
                     </div>
                     <div className="text-xs text-text-tertiary whitespace-nowrap">
-                      {log.timestamp ? new Date(log.timestamp.toDate()).toLocaleString('fr-FR') : 'À l\'instant'}
+                      {log.timestamp ? new Date(log.timestamp.toDate()).toLocaleString('fr-FR') : 'Just now'}
                     </div>
                   </div>
                 ))}
@@ -279,7 +279,7 @@ export function Admin() {
       {userToDelete && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <div className="bg-surface border border-border rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center">
-            <h3 className="font-display text-lg font-bold text-text-primary">Delete l'accès</h3>
+            <h3 className="font-display text-lg font-bold text-text-primary">Delete Access</h3>
             <p className="text-sm text-text-secondary">
               Are you sure you want to delete access for <strong>{userToDelete.emailOrUsername}</strong> ?
             </p>

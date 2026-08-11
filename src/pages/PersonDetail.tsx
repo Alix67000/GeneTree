@@ -184,7 +184,7 @@ export function PersonDetail() {
       {showDeleteModal && person && id && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <div className="bg-surface border border-border rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center">
-            <h3 className="font-display text-lg font-bold text-text-primary">Delete la personne</h3>
+            <h3 className="font-display text-lg font-bold text-text-primary">Delete Person</h3>
             <p className="text-sm text-text-secondary">
               Are you sure you want to permanently delete <strong>{person.firstName} {person.lastName}</strong> from the family tree? This action cannot be undone.
             </p>

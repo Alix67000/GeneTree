@@ -5,8 +5,8 @@ import { getInitials } from '@/lib/utils';
 import { FiGift } from 'react-icons/fi';
 
 const MONTH_NAMES = [
-  "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-  "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
 ];
 
 export function BirthdaysWidget() {
@@ -49,7 +49,7 @@ export function BirthdaysWidget() {
     <div className="bg-surface border border-border rounded-xl p-4 sm:p-5 shadow-sm space-y-3 w-full">
       <div className="flex items-center gap-2 text-primary font-display font-semibold text-base">
         <FiGift className="w-5 h-5" />
-        <span>Anniversaires du mois 🎂 ({currentMonthName})</span>
+        <span>Birthdays This Month 🎂 ({currentMonthName})</span>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {birthdayPersons.map(p => (

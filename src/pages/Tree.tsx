@@ -475,11 +475,6 @@ export function Tree() {
           handleSelectCentral(p.id);
         }}
       >
-        {roleLabel && roleLabel !== 'Member' && roleLabel !== 'Member' && (
-          <span className={`text-[9px] font-bold uppercase tracking-wider mb-1.5 px-2.5 py-0.5 rounded-full border shadow-xs transition-colors ${badgeStyle}`}>
-            {roleLabel}
-          </span>
-        )}
         <Card className={`relative transition-all w-[110px] p-2 flex flex-col items-center text-center bg-white border ${isCentral ? 'ring-4 ring-primary/40 border-primary shadow-lg' : isFocused ? 'ring-2 ring-primary border-primary shadow-md' : 'border-border/80 hover:shadow-md cursor-pointer'}`}>
           <div className="w-12 h-12 rounded-full border-2 border-accent bg-border ring-2 ring-white shadow flex items-center justify-center text-sm font-display font-semibold text-text-primary overflow-hidden shrink-0 my-1">
             {p.photoUrl ? (
@@ -598,22 +593,9 @@ export function Tree() {
       ) : (
         /* Infinite Canvas Tree Mode */
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-white p-4 rounded-2xl border border-border max-w-xl mx-auto shadow-xs">
-            <label className="text-sm font-semibold text-text-primary whitespace-nowrap flex items-center gap-2">
-              <FiUser className="text-primary" /> Central Person:
-            </label>
-            <select
-              value={centralPersonId}
-              onChange={(e) => handleSelectCentral(e.target.value)}
-              className="w-full sm:w-auto flex-1 px-4 py-2 rounded-xl border border-border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50"
-            >
-              {renderGroupedPersonOptions(persons)}
-            </select>
-          </div>
-
           <div 
             ref={containerRef}
-            className={`relative w-full h-[65vh] min-h-[500px] bg-slate-50 rounded-2xl border border-border shadow-inner overflow-hidden active:cursor-grabbing touch-none select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+            className={`relative w-full h-[78vh] min-h-[600px] bg-slate-50 rounded-2xl border border-border shadow-inner overflow-hidden active:cursor-grabbing touch-none select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}

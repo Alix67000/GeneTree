@@ -146,8 +146,8 @@ function JalaliDatePicker({
 }
 
 const LOCAL_GENDER_OPTIONS: { value: Gender; label: string }[] = [
-  { value: 'male', label: 'Masculin (Male)' },
-  { value: 'female', label: 'Féminin (Female)' },
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
 ];
 
 export function AddPerson() {
@@ -561,7 +561,7 @@ export function AddPerson() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-border">
             <AutocompletePerson
-              label="Père (Father)"
+              label="Father"
               valueId={formData.parentId1}
               onChange={(id, lastName) => {
                 setFormData(prev => ({ ...prev, parentId1: id }));
@@ -570,21 +570,21 @@ export function AddPerson() {
                 }
               }}
               options={persons.filter(p => p.gender === 'male' && p.id !== id)}
-              placeholder="Saisissez au moins 3 lettres..."
+              placeholder="Type at least 3 letters..."
             />
             <AutocompletePerson
-              label="Mère (Mother)"
+              label="Mother"
               valueId={formData.parentId2}
               onChange={(id) => setFormData(prev => ({ ...prev, parentId2: id }))}
               options={persons.filter(p => p.gender === 'female' && p.id !== id)}
-              placeholder="Saisissez au moins 3 lettres..."
+              placeholder="Type at least 3 letters..."
             />
             <AutocompletePerson
               label="Spouse"
               valueId={formData.spouseId}
               onChange={(id) => setFormData(prev => ({ ...prev, spouseId: id }))}
               options={persons.filter(p => (p.gender !== formData.gender || !p.gender) && p.id !== id)}
-              placeholder="Saisissez au moins 3 lettres..."
+              placeholder="Type at least 3 letters..."
             />
           </div>
 
@@ -681,14 +681,14 @@ export function AddPerson() {
                 onClick={() => setShowCropModal(false)}
                 className="flex-1"
               >
-                Annuler
+                Cancel
               </Button>
               <Button
                 size="sm"
                 onClick={handleConfirmCrop}
                 className="flex-1"
               >
-                Valider le recadrage
+                Confirm Crop
               </Button>
             </div>
           </div>

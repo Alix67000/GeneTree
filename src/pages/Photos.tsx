@@ -15,8 +15,8 @@ export function Photos() {
   return (
     <div className="space-y-8 pb-8">
       <div>
-        <h1 className="text-3xl font-display font-semibold text-text-primary">Galerie de la famille</h1>
-        <p className="text-text-secondary mt-1">Les visages qui composent votre arbre généalogique.</p>
+        <h1 className="text-3xl font-display font-semibold text-text-primary">Family Gallery</h1>
+        <p className="text-text-secondary mt-1">The faces that shape your family tree.</p>
       </div>
 
       {persons.length === 0 ? (
@@ -24,9 +24,9 @@ export function Photos() {
           <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center text-accent mb-4">
             <FiImage size={24} />
           </div>
-          <h2 className="text-xl font-display font-medium text-text-primary">Aucune personne pour le moment</h2>
+          <h2 className="text-xl font-display font-medium text-text-primary">No people yet</h2>
           <p className="text-text-secondary max-w-md">
-            Ajoutez des membres à votre famille pour les voir apparaître ici.
+            Add members to your family tree to see them appear here.
           </p>
         </Card>
       ) : (
@@ -63,7 +63,7 @@ export function Photos() {
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                       <div className="flex flex-col items-center text-white space-y-2">
                         <FiCamera size={32} />
-                        <span className="text-sm font-medium">Ajouter une photo</span>
+                        <span className="text-sm font-medium">Add Photo</span>
                       </div>
                     </div>
                   )}
