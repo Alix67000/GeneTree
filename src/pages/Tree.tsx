@@ -475,7 +475,7 @@ export function Tree() {
           handleSelectCentral(p.id);
         }}
       >
-        {roleLabel && roleLabel !== 'Membre' && roleLabel !== 'Member' && (
+        {roleLabel && roleLabel !== 'Member' && roleLabel !== 'Member' && (
           <span className={`text-[9px] font-bold uppercase tracking-wider mb-1.5 px-2.5 py-0.5 rounded-full border shadow-xs transition-colors ${badgeStyle}`}>
             {roleLabel}
           </span>
@@ -586,10 +586,10 @@ export function Tree() {
                   className="flex-1 text-xs"
                   onClick={(e) => { e.stopPropagation(); handleSelectCentral(person.id); setViewMode('tree'); }}
                 >
-                  Centrer dans l'arbre
+                  Center in Tree
                 </Button>
                 <Link to={`/person/${person.id}`} onClick={(e) => e.stopPropagation()} className="flex-1">
-                  <Button variant="primary" size="sm" className="w-full text-xs">Fiche</Button>
+                  <Button variant="primary" size="sm" className="w-full text-xs">Profile</Button>
                 </Link>
               </div>
             </Card>
@@ -600,7 +600,7 @@ export function Tree() {
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-white p-4 rounded-2xl border border-border max-w-xl mx-auto shadow-xs">
             <label className="text-sm font-semibold text-text-primary whitespace-nowrap flex items-center gap-2">
-              <FiUser className="text-primary" /> Personne centrale :
+              <FiUser className="text-primary" /> Central Person:
             </label>
             <select
               value={centralPersonId}
@@ -761,21 +761,21 @@ export function Tree() {
                 const x = xPos.get(p.id) || 0;
                 const y = (levels.get(p.id) || 0) * 200;
                 
-                let role = 'Membre';
+                let role = 'Member';
                 let badgeStyle = 'bg-slate-100 text-slate-700 border-slate-200';
                 const isCentral = p.id === centralPersonId;
                 
                 if (isCentral) {
-                  role = 'Personne Centrale';
+                  role = 'Central Person';
                   badgeStyle = 'bg-amber-100 text-amber-900 border-amber-300';
                 } else if (p.id === centralPerson?.parentId1 || p.id === centralPerson?.parentId2) {
                   role = 'Parent';
                   badgeStyle = 'bg-blue-50 text-blue-700 border-blue-200';
                 } else if (p.id === centralPerson?.spouseId) {
-                  role = 'Conjoint(e)';
+                  role = 'Spouse';
                   badgeStyle = 'bg-rose-50 text-rose-700 border-rose-200';
                 } else if (centralPerson && (p.parentId1 === centralPerson.id || p.parentId2 === centralPerson.id)) {
-                  role = 'Enfant';
+                  role = 'Child';
                   badgeStyle = 'bg-emerald-50 text-emerald-700 border-emerald-200';
                 }
 

@@ -87,20 +87,20 @@ export function Home() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
             <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
-              Identifiant / E-mail
+              Username / E-mail
             </label>
             <input 
               type="text" 
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="E-mail ou Identifiant"
+              placeholder="E-mail or Username"
               className="w-full px-4 py-2.5 rounded-[var(--radius-button)] border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Mot de passe</label>
+            <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Password</label>
             <input 
               type="password" 
               required

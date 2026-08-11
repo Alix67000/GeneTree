@@ -122,7 +122,7 @@ export function Photos() {
                 }}
               >
                 <FiUser />
-                Voir la fiche
+                View Profile
               </Button>
             </div>
           </div>

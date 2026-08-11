@@ -53,7 +53,7 @@ export function Header() {
             type="text"
             value={searchTerm}
             onChange={handleSearch}
-            placeholder="Rechercher une personne..."
+            placeholder="Search for a person..."
             className="w-full h-9 px-3 text-xs bg-background border border-border rounded-full focus:outline-none focus:border-primary"
           />
           {searchResults.length > 0 && (
@@ -111,9 +111,9 @@ export function Header() {
       {showLogoutModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <div className="bg-surface border border-border rounded-xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center">
-            <h3 className="font-display text-lg font-bold text-text-primary">Déconnexion</h3>
+            <h3 className="font-display text-lg font-bold text-text-primary">Sign Out</h3>
             <p className="text-sm text-text-secondary">
-              Êtes-vous sûr de vouloir vous déconnecter de GeneTree ?
+              Are you sure you want to sign out of GeneTree?
             </p>
             <div className="flex items-center justify-end gap-3 pt-2">
               <Button
@@ -122,7 +122,7 @@ export function Header() {
                 onClick={() => setShowLogoutModal(false)}
                 className="flex-1"
               >
-                Annuler
+                Cancel
               </Button>
               <Button
                 size="sm"
@@ -133,7 +133,7 @@ export function Header() {
                 }}
                 className="flex-1 bg-red-600 hover:bg-red-700 text-white"
               >
-                Se déconnecter
+                Sign Out
               </Button>
             </div>
           </div>

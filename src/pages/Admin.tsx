@@ -105,7 +105,7 @@ export function Admin() {
         createdAt: serverTimestamp()
       });
       
-      logActivity('AJOUT_MEMBRE', `Création du compte membre ${formData.emailOrUsername}`, currentUser?.email || 'Inconnu');
+      logActivity('AJOUT_MEMBRE', `Creating... compte membre ${formData.emailOrUsername}`, currentUser?.email || 'Inconnu');
       
       setSuccess("Accès membre créé avec succès.");
       setFormData({ emailOrUsername: '', password: '', displayName: '' });
@@ -146,7 +146,7 @@ export function Admin() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-1">
           <Card className="p-6 sticky top-24">
-            <h2 className="text-xl font-semibold mb-6">Créer un accès</h2>
+            <h2 className="text-xl font-semibold mb-6">Create Access</h2>
             
             {error && (
               <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-100">
@@ -162,7 +162,7 @@ export function Admin() {
             
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">Identifiant ou E-mail</label>
+                <label className="text-sm font-medium text-text-primary">Username or E-mail</label>
                 <input 
                   type="text" 
                   name="emailOrUsername"
@@ -174,7 +174,7 @@ export function Admin() {
               </div>
               
               <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">Mot de passe initial</label>
+                <label className="text-sm font-medium text-text-primary">Initial Password</label>
                 <input 
                   type="password" 
                   name="password"
@@ -186,7 +186,7 @@ export function Admin() {
               </div>
               
               <div className="space-y-2">
-                <label className="text-sm font-medium text-text-primary">Nom complet</label>
+                <label className="text-sm font-medium text-text-primary">Full Name</label>
                 <input 
                   type="text" 
                   name="displayName"
@@ -198,7 +198,7 @@ export function Admin() {
               </div>
               
               <Button type="submit" disabled={formLoading} className="w-full pt-2">
-                {formLoading ? 'Création...' : 'Créer l\'accès'}
+                {formLoading ? 'Creating...' : 'Créer l\'accès'}
               </Button>
             </form>
           </Card>
@@ -220,13 +220,13 @@ export function Admin() {
                   <div key={user.id} className="p-6 flex items-center justify-between hover:bg-surface transition-colors">
                     <div>
                       <div className="font-semibold text-text-primary">{user.displayName}</div>
-                      <div className="text-sm text-text-secondary mt-1">Identifiant : {user.emailOrUsername}</div>
+                      <div className="text-sm text-text-secondary mt-1">Username: {user.emailOrUsername}</div>
                       <div className="text-sm text-text-secondary mt-1 flex items-center gap-2">
-                        <span>Mot de passe : <span className="font-mono bg-accent/5 px-1 py-0.5 rounded">{visiblePasswords[user.id] ? user.password : '••••••••'}</span></span>
+                        <span>Password: <span className="font-mono bg-accent/5 px-1 py-0.5 rounded">{visiblePasswords[user.id] ? user.password : '••••••••'}</span></span>
                         <button 
                           onClick={() => setVisiblePasswords(prev => ({ ...prev, [user.id]: !prev[user.id] }))}
                           className="text-text-tertiary hover:text-text-primary transition-colors focus:outline-none"
-                          title={visiblePasswords[user.id] ? "Masquer" : "Afficher"}
+                          title={visiblePasswords[user.id] ? "Hide" : "Show"}
                         >
                           {visiblePasswords[user.id] ? <FiEyeOff size={14} /> : <FiEye size={14} />}
                         </button>
@@ -238,7 +238,7 @@ export function Admin() {
                       onClick={() => handleDelete(user.id, user.emailOrUsername)}
                       className="text-red-500 hover:bg-red-50 hover:text-red-600 border-red-200"
                     >
-                      Supprimer
+                      Delete
                     </Button>
                   </div>
                 ))}
@@ -279,9 +279,9 @@ export function Admin() {
       {userToDelete && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <div className="bg-surface border border-border rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center">
-            <h3 className="font-display text-lg font-bold text-text-primary">Supprimer l'accès</h3>
+            <h3 className="font-display text-lg font-bold text-text-primary">Delete l'accès</h3>
             <p className="text-sm text-text-secondary">
-              Êtes-vous sûr de vouloir supprimer l'accès de <strong>{userToDelete.emailOrUsername}</strong> ?
+              Are you sure you want to delete access for <strong>{userToDelete.emailOrUsername}</strong> ?
             </p>
             <div className="flex items-center justify-end gap-3 pt-2">
               <Button
@@ -290,7 +290,7 @@ export function Admin() {
                 onClick={() => setUserToDelete(null)}
                 className="flex-1"
               >
-                Annuler
+                Cancel
               </Button>
               <Button
                 size="sm"
@@ -308,7 +308,7 @@ export function Admin() {
                 }}
                 className="flex-1 bg-red-600 hover:bg-red-700 text-white"
               >
-                Supprimer
+                Delete
               </Button>
             </div>
           </div>

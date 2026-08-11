@@ -45,7 +45,7 @@ export function PersonDetail() {
 
   const handleDelete = () => {
     if (!isAdmin) {
-      alert("Accès refusé : Seul l'administrateur de la famille (Ali Ahmadi) peut supprimer une fiche.");
+      alert("Access denied: Only the family administrator (Ali Ahmadi) can delete records.");
       return;
     }
     if (!id || !person) return;
@@ -69,12 +69,12 @@ export function PersonDetail() {
         <div className="flex items-center gap-2">
           <Link to={`/person/edit/${id}`}>
             <Button variant="outline" size="sm" className="inline-flex items-center gap-1.5 text-xs">
-              <FiEdit2 className="w-3.5 h-3.5" /> Modifier
+              <FiEdit2 className="w-3.5 h-3.5" /> Edit
             </Button>
           </Link>
           {isAdmin && (
             <Button variant="outline" size="sm" onClick={handleDelete} className="inline-flex items-center gap-1.5 text-xs text-error border-error/30 hover:bg-error/10">
-              <FiTrash2 className="w-3.5 h-3.5" /> Supprimer
+              <FiTrash2 className="w-3.5 h-3.5" /> Delete
             </Button>
           )}
         </div>
@@ -140,7 +140,7 @@ export function PersonDetail() {
               </div>
 
               <div className="p-3 bg-background/50 border border-border rounded-xl">
-                <span className="text-xs text-text-secondary block font-medium">Conjoint(e)</span>
+                <span className="text-xs text-text-secondary block font-medium">Spouse</span>
                 {spouse ? (
                   <Link to={`/person/${spouse.id}`} className="text-primary font-semibold hover:underline flex items-center gap-1 mt-1">
                     <FiHeart className="w-3.5 h-3.5 text-accent" /> {spouse.firstName} {spouse.lastName}
@@ -184,9 +184,9 @@ export function PersonDetail() {
       {showDeleteModal && person && id && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <div className="bg-surface border border-border rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center">
-            <h3 className="font-display text-lg font-bold text-text-primary">Supprimer la personne</h3>
+            <h3 className="font-display text-lg font-bold text-text-primary">Delete la personne</h3>
             <p className="text-sm text-text-secondary">
-              Êtes-vous sûr de vouloir supprimer définitivement <strong>{person.firstName} {person.lastName}</strong> de l'arbre familial ? Cette action est irréversible.
+              Are you sure you want to permanently delete <strong>{person.firstName} {person.lastName}</strong> from the family tree? This action cannot be undone.
             </p>
             <div className="flex items-center justify-end gap-3 pt-2">
               <Button
@@ -195,7 +195,7 @@ export function PersonDetail() {
                 onClick={() => setShowDeleteModal(false)}
                 className="flex-1"
               >
-                Annuler
+                Cancel
               </Button>
               <Button
                 size="sm"
@@ -217,7 +217,7 @@ export function PersonDetail() {
                 }}
                 className="flex-1 bg-red-600 hover:bg-red-700 text-white"
               >
-                Supprimer
+                Delete
               </Button>
             </div>
           </div>

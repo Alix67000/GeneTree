@@ -330,7 +330,7 @@ export function AddPerson() {
     );
 
     if (duplicate) {
-      const confirmed = window.confirm("Une personne portant ce nom et cette date de naissance existe déjà dans l'arbre. Voulez-vous vraiment continuer ?");
+      const confirmed = window.confirm("A person with this name and birth date already exists in the tree. Do you want to continue?");
       if (!confirmed) return;
     }
 
@@ -580,7 +580,7 @@ export function AddPerson() {
               placeholder="Saisissez au moins 3 lettres..."
             />
             <AutocompletePerson
-              label="Conjoint(e)"
+              label="Spouse"
               valueId={formData.spouseId}
               onChange={(id) => setFormData(prev => ({ ...prev, spouseId: id }))}
               options={persons.filter(p => (p.gender !== formData.gender || !p.gender) && p.id !== id)}
@@ -626,9 +626,9 @@ export function AddPerson() {
       {showCropModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[110] p-4">
           <div className="bg-surface border border-border rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-5 text-center">
-            <h3 className="font-display text-lg font-bold text-text-primary">Recadrer la photo de profil</h3>
+            <h3 className="font-display text-lg font-bold text-text-primary">Crop Profile Photo</h3>
             <p className="text-xs text-text-secondary">
-              Ajustez le zoom et déplacez l'image pour centrer le visage dans le cercle.
+              Adjust zoom and drag the image to center the face within the circle.
             </p>
 
             <div 
