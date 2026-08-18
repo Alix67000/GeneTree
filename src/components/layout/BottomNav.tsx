@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { FiGitCommit, FiImage, FiClock, FiUser, FiSettings, FiSun, FiMapPin, FiBookOpen, FiStar, FiLayers, FiX } from 'react-icons/fi';
+import { FiGitCommit, FiImage, FiClock, FiUser, FiSettings, FiSun, FiMapPin, FiBookOpen, FiStar, FiLayers, FiX, FiPlus } from 'react-icons/fi';
 import { useAuth } from '@/hooks/useAuth';
 
 const ADMIN_EMAILS = ['ahmadi67000@gmail.com'];
@@ -57,10 +57,13 @@ export function BottomNav() {
             <span>Admin</span>
           </NavLink>
         ) : (
-          <div className="flex flex-col items-center justify-center flex-1 h-full text-xs font-medium text-text-secondary">
-            <FiUser size={20} className="mb-1" />
-            <span>Member</span>
-          </div>
+          <NavLink 
+            to="/person/add" 
+            className={({ isActive }) => `flex flex-col items-center justify-center flex-1 h-full text-xs font-medium transition-colors ${isActive ? 'text-primary' : 'text-text-secondary hover:text-text-primary'}`}
+          >
+            <FiPlus size={20} className="mb-1" />
+            <span>Add</span>
+          </NavLink>
         )}
       </nav>
 

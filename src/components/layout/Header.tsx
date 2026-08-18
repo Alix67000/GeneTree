@@ -95,6 +95,12 @@ export function Header() {
                 <NavLink to="/admin" className={({isActive}) => isActive ? "text-primary border-b-2 border-primary pb-1" : "hover:text-primary transition-colors"}>Admin</NavLink>
               )}
             </div>
+            <Link
+              to="/person/add"
+              className="h-8 px-2.5 sm:px-3 inline-flex items-center justify-center gap-1 bg-primary text-white rounded-lg text-xs font-medium shrink-0"
+            >
+              + Add
+            </Link>
             <div className="flex items-center gap-2 pl-2 border-l border-border">
               <div className="w-7 h-7 rounded-full bg-accent text-white font-bold text-xs flex items-center justify-center shrink-0">
                 {currentUser.displayName ? currentUser.displayName.charAt(0) : 'U'}

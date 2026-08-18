@@ -1,18 +1,16 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { usePersons } from '@/hooks/usePersons';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
 import { Link } from 'react-router-dom';
-import { getInitials, formatPersonAge } from '@/lib/utils';
+import { getInitials } from '@/lib/utils';
 import { 
-  FiPlus, FiMinus, FiRefreshCcw, FiUser, FiGrid, FiGitCommit, 
+  FiPlus, FiMinus, FiRefreshCcw, FiUser, FiGitCommit, 
   FiHeart, FiEye, FiArrowUp, FiArrowDown, FiDownload, FiZoomIn, FiZoomOut, FiMaximize
 } from 'react-icons/fi';
 import { Person } from '@/types';
 
 export function Tree() {
   const { persons, loading } = usePersons();
-  const [viewMode, setViewMode] = useState<'tree' | 'canvas' | 'grid'>('tree');
   const [centralPersonId, setCentralPersonId] = useState<string>('');
   const [focusedPersonId, setFocusedPersonId] = useState<string | null>(null);
   const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
@@ -526,11 +524,11 @@ export function Tree() {
   };
 
   return (
-    <div className="flex flex-col overflow-hidden overscroll-none bg-background -mx-2 -my-4 sm:-mx-4 md:-mx-8 h-[calc(100dvh-9rem)] md:h-[calc(100dvh-4rem)]">
+    <div className="flex flex-col overflow-hidden overscroll-none bg-background -mx-2 -my-4 sm:-mx-4 md:-mx-8 h-[calc(100dvh-8rem)] md:h-[calc(100dvh-4rem)]">
       {/* Header & Controls */}
-      <div className="px-3 py-2 md:p-4 border-b border-border bg-surface flex flex-row items-center gap-2 md:gap-3 z-10 shadow-sm shrink-0">
+      <div className="px-2 py-1.5 md:px-4 md:py-2 border-b border-border bg-surface flex flex-row items-center gap-2 shrink-0">
         <div className="shrink-0">
-          <h1 className="text-base md:text-xl font-display font-bold text-text-primary truncate">Find your relative</h1>
+          <h1 className="text-sm md:text-xl font-display font-bold text-text-primary truncate">Find your relative</h1>
         </div>
         <div className="relative w-full min-w-0 flex-1">
           <input
@@ -561,11 +559,6 @@ export function Tree() {
             </div>
           )}
         </div>
-        <div className="inline-flex h-9 p-0.5 bg-background border border-border rounded-lg shrink-0">
-          <button onClick={() => setViewMode('canvas')} className={`px-2 md:px-3 h-full rounded-md text-xs font-medium ${viewMode === 'canvas' || viewMode === 'tree' ? 'bg-primary text-white' : 'text-text-secondary'}`}>Canvas</button>
-          <button onClick={() => setViewMode('grid')} className={`px-2 md:px-3 h-full rounded-md text-xs font-medium ${viewMode === 'grid' ? 'bg-primary text-white' : 'text-text-secondary'}`}>Grid</button>
-        </div>
-        <Link to="/person/add" className="h-9 px-3 inline-flex items-center justify-center bg-primary text-white rounded-lg text-xs font-medium shrink-0">+ Add</Link>
       </div>
 
       {persons.length === 0 ? (
@@ -579,48 +572,11 @@ export function Tree() {
             <FiPlus /> Add First Person
           </Link>
         </Card>
-      ) : viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4 overflow-y-auto flex-1 min-h-0">
-          {persons.map(person => (
-            <Card 
-              key={person.id} 
-              className="hover:shadow-lg transition-all cursor-pointer h-full flex flex-col items-center text-center p-6 space-y-4 bg-white"
-              onClick={() => handleSelectCentral(person.id)}
-            >
-              <div className="w-20 h-20 rounded-full border-2 border-accent bg-border ring-4 ring-white shadow-lg flex items-center justify-center text-2xl font-display font-medium text-text-primary overflow-hidden">
-                {person.photoUrl ? (
-                  <img src={person.photoUrl} alt={`${person.firstName} ${person.lastName}`} className="w-full h-full object-cover" />
-                ) : (
-                  getInitials(person.firstName, person.lastName)
-                )}
-              </div>
-              <div>
-                <h3 className="font-display font-bold text-lg text-text-primary">{person.firstName} {person.lastName}</h3>
-                <p className="text-sm text-text-secondary mt-1 italic">
-                  {formatPersonAge(person.birthDate, person.deathDate, person.isLiving)}
-                </p>
-              </div>
-              <div className="flex gap-2 w-full pt-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="flex-1 text-xs"
-                  onClick={(e) => { e.stopPropagation(); handleSelectCentral(person.id); setViewMode('tree'); }}
-                >
-                  Center in Tree
-                </Button>
-                <Link to={`/person/${person.id}`} onClick={(e) => e.stopPropagation()} className="flex-1">
-                  <Button variant="primary" size="sm" className="w-full text-xs">Profile</Button>
-                </Link>
-              </div>
-            </Card>
-          ))}
-        </div>
       ) : (
         /* Infinite Canvas Tree Mode */
         <div 
           ref={containerRef}
-          className={`relative w-full flex-1 min-h-0 bg-slate-50 rounded-2xl border border-border shadow-inner overflow-hidden active:cursor-grabbing touch-none select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+          className={`relative w-full flex-1 min-h-0 bg-slate-50 overflow-hidden active:cursor-grabbing touch-none select-none md:rounded-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -806,7 +762,7 @@ export function Tree() {
             </div>
 
             {/* Toolbar */}
-            <div className="zoom-toolbar absolute bottom-6 right-6 flex flex-col gap-1 bg-white p-1.5 rounded-xl shadow-lg border border-slate-200 z-30 w-auto">
+            <div className="zoom-toolbar absolute bottom-4 right-3 md:bottom-6 md:right-6 flex flex-col gap-1 bg-white p-1.5 rounded-xl shadow-lg border border-slate-200 z-30 w-auto">
               <button onClick={() => handleZoom(0.2)} className="p-2 hover:bg-slate-50 rounded-lg transition-colors" title="Zoom In">
                 <FiZoomIn className="w-4 h-4 text-slate-600" />
               </button>
