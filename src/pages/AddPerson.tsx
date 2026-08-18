@@ -2,8 +2,7 @@ import { COUNTRIES_WITH_FLAGS } from "@/lib/countries";
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { collection, addDoc, updateDoc, doc, getDoc, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '@/services/firebase';
+import { db } from '@/services/firebase';
 import { COLLECTIONS } from '@/lib/constants';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -18,6 +17,10 @@ import { FiUpload, FiImage, FiX, FiCalendar } from 'react-icons/fi';
 import { useAuth } from '@/hooks/useAuth';
 import { logActivity } from '@/lib/logger';
 import { renderGroupedPersonOptions } from '@/lib/personUtils';
+
+const CLOUDINARY_CLOUD_NAME = 'hi9cdtpu';
+const CLOUDINARY_UPLOAD_PRESET = 'genetree';
+const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
 
 const JALALI_MONTHS = [
   "Farvardin", "Ordibehesht", "Khordad",
@@ -345,54 +348,44 @@ export function AddPerson() {
 
       // Upload ONLY if photoFile !== null
       if (photoFile) {
-        const uploadSingleAttempt = async (): Promise<string> => {
+        const uploadOnce = async () => {
           const compressedBlob = await compressAndResizeImage(photoFile, 600, 0.7);
-          const storageRef = ref(storage, `family_photos/${Date.now()}_${photoFile.name.replace(/\.[^/.]+$/, '')}.webp`);
-          const uploadTask = uploadBytesResumable(storageRef, compressedBlob, { contentType: 'image/webp' });
-
-          return new Promise<string>((resolve, reject) => {
-            const timer = setTimeout(() => {
-              uploadTask.cancel();
-              reject(new Error('Firebase Storage upload timed out after 30000ms'));
-            }, 30000);
-
-            uploadTask.on('state_changed', 
-              (snapshot) => {
-                setUploadProgress(Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100));
-              },
-              (error) => {
-                clearTimeout(timer);
-                reject(error);
-              },
-              () => {
-                clearTimeout(timer);
-                getDownloadURL(uploadTask.snapshot.ref).then(resolve).catch(reject);
-              }
-            );
-          });
+          const fd = new FormData();
+          fd.append('file', compressedBlob, 'profile.webp');
+          fd.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+          fd.append('folder', 'genetree');
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 30000);
+          try {
+            const res = await fetch(CLOUDINARY_UPLOAD_URL, { method: 'POST', body: fd, signal: controller.signal });
+            if (!res.ok) throw new Error(`Cloudinary ${res.status}`);
+            const json = await res.json();
+            if (!json.secure_url) throw new Error('No secure_url');
+            return json.secure_url as string;
+          } finally {
+            clearTimeout(timer);
+          }
         };
 
         try {
-          // First attempt
-          finalPhotoUrl = await uploadSingleAttempt();
-        } catch (err1) {
-          console.warn('First photo upload attempt failed, retrying once...', err1);
+          setUploadProgress(10);
+          finalPhotoUrl = await uploadOnce();
+          setUploadProgress(100);
+        } catch {
           try {
-            // Second attempt (retry once)
-            finalPhotoUrl = await uploadSingleAttempt();
-          } catch (err2) {
-            console.error('Photo upload failed after retry:', err2);
-            const prevUrl = formData.photoUrl;
-            finalPhotoUrl = (typeof prevUrl === 'string' && (prevUrl.startsWith('http://') || prevUrl.startsWith('https://')))
-              ? prevUrl
-              : '';
-            alert("Photo could not be uploaded. Person was saved without the new photo.");
+            setUploadProgress(20);
+            finalPhotoUrl = await uploadOnce();
+            setUploadProgress(100);
+          } catch (e2) {
+            console.error('Cloudinary upload failed:', e2);
+            finalPhotoUrl = (formData.photoUrl && formData.photoUrl.startsWith('http')) ? formData.photoUrl : '';
+            alert('Photo could not be uploaded. Person was saved without the new photo.');
           }
         }
       }
 
-      // Sanitize before payload
-      if (typeof finalPhotoUrl === 'string' && finalPhotoUrl.startsWith('data:')) {
+      if (typeof finalPhotoUrl === 'string' && finalPhotoUrl.startsWith('data:')) finalPhotoUrl = '';
+      if (!photoFile && typeof formData.photoUrl === 'string' && formData.photoUrl.startsWith('data:')) {
         finalPhotoUrl = '';
       }
 
