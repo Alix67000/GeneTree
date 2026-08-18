@@ -341,17 +341,17 @@ export function StarNetworkView() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] bg-background">
-      <div className="p-4 border-b border-border bg-surface flex flex-col sm:flex-row gap-4 justify-between items-center z-10 shadow-sm">
+    <div className="flex flex-col overflow-hidden overscroll-none bg-background -mx-2 -my-4 sm:-mx-4 md:-mx-8 h-[calc(100dvh-9rem)] md:h-[calc(100dvh-4rem)]">
+      <div className="px-3 py-2 md:p-4 border-b border-border bg-surface flex flex-row gap-2 md:gap-4 justify-between items-center z-10 shadow-sm shrink-0">
         <div>
-          <h2 className="text-xl font-display font-bold text-text-primary">Star Network</h2>
-          <p className="text-xs text-text-secondary">Explore directional lineage clusters around a central member</p>
+          <h2 className="text-base md:text-xl font-display font-bold text-text-primary truncate">Star Network</h2>
+          <p className="text-xs text-text-secondary hidden sm:block">Explore directional lineage clusters around a central member</p>
         </div>
         <div className="flex items-center gap-2">
           <select
             value={activeCenterId || ''}
             onChange={(e) => setCenterId(e.target.value)}
-            className="px-3 py-2 border border-border rounded-lg text-sm bg-background min-w-[220px]"
+            className="px-2 md:px-3 py-1.5 md:py-2 border border-border rounded-lg text-xs md:text-sm bg-background min-w-0 flex-1 sm:flex-none sm:min-w-[220px] max-w-[55%] sm:max-w-none"
           >
             {renderGroupedPersonOptions(persons)}
           </select>
@@ -450,7 +450,7 @@ export function StarNetworkView() {
           </div>
         )}
 
-        <div className="zoom-toolbar absolute bottom-6 right-6 flex flex-col gap-1 bg-white p-1.5 rounded-xl shadow-lg border border-slate-200 z-30 w-auto">
+        <div className="zoom-toolbar absolute bottom-4 right-3 md:bottom-6 md:right-6 flex flex-col gap-1 bg-white p-1.5 rounded-xl shadow-lg border border-slate-200 z-30 w-auto">
           <button onClick={() => handleZoom(0.2)} className="p-2 hover:bg-slate-50 rounded-lg transition-colors" title="Zoom In">
             <FiZoomIn className="w-4 h-4 text-slate-600" />
           </button>
