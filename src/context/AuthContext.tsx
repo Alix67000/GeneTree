@@ -6,6 +6,7 @@ import {
   signOut, 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
+  signInAnonymously,
   User as FirebaseUser 
 } from 'firebase/auth';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -27,6 +28,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const customSession = JSON.parse(sessionStr);
         setCurrentUser(customSession as unknown as FirebaseUser);
         setLoading(false);
+        if (!auth.currentUser) {
+          signInAnonymously(auth).catch((err) => console.warn('Anon auth restore failed:', err));
+        }
       } catch (err) {
         console.error('Failed to parse custom session', err);
         localStorage.removeItem('genetree_member_session');
@@ -68,6 +72,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         localStorage.setItem('genetree_member_session', JSON.stringify(customUser));
         setCurrentUser(customUser as unknown as FirebaseUser);
+        
+        try {
+          await signInAnonymously(auth);
+        } catch (anonErr) {
+          console.warn('Anonymous sign-in for Storage auth failed:', anonErr);
+        }
         
         logActivity('CONNEXION', `Connexion du membre ${userData.emailOrUsername}`, userData.emailOrUsername);
         

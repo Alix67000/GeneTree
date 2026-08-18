@@ -12,7 +12,7 @@ import { CountrySelectWithFlags } from '@/components/CountrySelectWithFlags';
 import { useFamily } from '@/hooks/useFamily';
 import { usePersons } from '@/hooks/usePersons';
 import { Gender, Person } from '@/types';
-import { compressAndResizeImage, blobToDataURL } from '@/lib/imageOptimizer';
+import { compressAndResizeImage } from '@/lib/imageOptimizer';
 import { toShamsiDateString, toMiladiDateString } from '@/lib/calendarUtils';
 import { FiUpload, FiImage, FiX, FiCalendar } from 'react-icons/fi';
 import { useAuth } from '@/hooks/useAuth';
@@ -339,18 +339,22 @@ export function AddPerson() {
     try {
       let finalPhotoUrl = formData.photoUrl;
 
-      // N'upload vers Firebase Storage QUE si l'utilisateur a explicitement sélectionné ou recadré un nouveau fichier (photoFile !== null)
+      if (typeof finalPhotoUrl === 'string' && finalPhotoUrl.startsWith('data:')) {
+        finalPhotoUrl = '';
+      }
+
+      // Upload ONLY if photoFile !== null
       if (photoFile) {
-        try {
+        const uploadSingleAttempt = async (): Promise<string> => {
           const compressedBlob = await compressAndResizeImage(photoFile, 600, 0.7);
           const storageRef = ref(storage, `family_photos/${Date.now()}_${photoFile.name.replace(/\.[^/.]+$/, '')}.webp`);
           const uploadTask = uploadBytesResumable(storageRef, compressedBlob, { contentType: 'image/webp' });
-          
-          const downloadUrl = await new Promise<string>((resolve, reject) => {
+
+          return new Promise<string>((resolve, reject) => {
             const timer = setTimeout(() => {
               uploadTask.cancel();
-              reject(new Error('Firebase Storage upload timed out after 5000ms'));
-            }, 5000);
+              reject(new Error('Firebase Storage upload timed out after 30000ms'));
+            }, 30000);
 
             uploadTask.on('state_changed', 
               (snapshot) => {
@@ -366,12 +370,30 @@ export function AddPerson() {
               }
             );
           });
-          finalPhotoUrl = downloadUrl;
-        } catch (uploadError: any) {
-          console.error('Photo upload error, falling back to local Base64 WebP:', uploadError);
-          const compressedBlob = await compressAndResizeImage(photoFile, 600, 0.7);
-          finalPhotoUrl = await blobToDataURL(compressedBlob);
+        };
+
+        try {
+          // First attempt
+          finalPhotoUrl = await uploadSingleAttempt();
+        } catch (err1) {
+          console.warn('First photo upload attempt failed, retrying once...', err1);
+          try {
+            // Second attempt (retry once)
+            finalPhotoUrl = await uploadSingleAttempt();
+          } catch (err2) {
+            console.error('Photo upload failed after retry:', err2);
+            const prevUrl = formData.photoUrl;
+            finalPhotoUrl = (typeof prevUrl === 'string' && (prevUrl.startsWith('http://') || prevUrl.startsWith('https://')))
+              ? prevUrl
+              : '';
+            alert("Photo could not be uploaded. Person was saved without the new photo.");
+          }
         }
+      }
+
+      // Sanitize before payload
+      if (typeof finalPhotoUrl === 'string' && finalPhotoUrl.startsWith('data:')) {
+        finalPhotoUrl = '';
       }
 
       const payload = {
