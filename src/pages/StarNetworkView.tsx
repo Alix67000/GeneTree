@@ -398,7 +398,7 @@ export function StarNetworkView() {
 
   return (
     <div className="flex flex-col overflow-hidden overscroll-none bg-background -mx-2 -my-4 sm:-mx-4 md:-mx-8 h-[calc(100dvh-9rem)] md:h-[calc(100dvh-4rem)]">
-      <div className="px-3 py-2 md:p-4 border-b border-border bg-surface flex flex-col xs:flex-row sm:flex-row gap-2 md:gap-3 items-stretch sm:items-center z-10 shadow-sm shrink-0">
+      <div className="px-3 py-2 md:p-4 border-b border-border bg-surface flex flex-row items-center gap-2 md:gap-3 z-10 shadow-sm shrink-0">
         <div className="shrink-0">
           <h2 className="text-base md:text-xl font-display font-bold text-text-primary truncate">Find your relative</h2>
           <p className="text-xs text-text-secondary hidden sm:block">Explore directional lineage clusters around a central member</p>
