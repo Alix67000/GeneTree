@@ -4,7 +4,6 @@ import { Person } from '@/types';
 import { getInitials } from '@/lib/utils';
 import { FiZoomIn, FiZoomOut, FiMaximize } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
-import { renderGroupedPersonOptions } from '@/lib/personUtils';
 
 interface StarNode {
   id: string;
@@ -38,6 +37,23 @@ export function StarNetworkView() {
     if (centerId && persons.some(p => p.id === centerId)) return centerId;
     return persons.length > 0 ? persons[0].id : null;
   }, [centerId, persons]);
+
+  const [personQuery, setPersonQuery] = useState('');
+  const [personListOpen, setPersonListOpen] = useState(false);
+
+  useEffect(() => {
+    if (!activeCenterId) { setPersonQuery(''); return; }
+    const p = persons.find(x => x.id === activeCenterId);
+    if (p) setPersonQuery(`${(p.lastName || '').toUpperCase()} ${p.firstName}`);
+  }, [activeCenterId, persons]);
+
+  const personSuggestions = useMemo(() => {
+    if (personQuery.trim().length < 3) return [];
+    const q = personQuery.toLowerCase();
+    return [...persons]
+      .filter(p => `${p.firstName} ${p.lastName}`.toLowerCase().includes(q))
+      .sort((a, b) => (a.lastName || '').localeCompare(b.lastName || '') || (a.firstName || '').localeCompare(b.firstName || ''));
+  }, [personQuery, persons]);
 
   const { nodes, links } = useMemo(() => {
     if (!activeCenterId || persons.length === 0) return { nodes: [], links: [] };
@@ -382,19 +398,41 @@ export function StarNetworkView() {
 
   return (
     <div className="flex flex-col overflow-hidden overscroll-none bg-background -mx-2 -my-4 sm:-mx-4 md:-mx-8 h-[calc(100dvh-9rem)] md:h-[calc(100dvh-4rem)]">
-      <div className="px-3 py-2 md:p-4 border-b border-border bg-surface flex flex-row gap-2 md:gap-4 justify-between items-center z-10 shadow-sm shrink-0">
-        <div>
-          <h2 className="text-base md:text-xl font-display font-bold text-text-primary truncate">Star Network</h2>
+      <div className="px-3 py-2 md:p-4 border-b border-border bg-surface flex flex-col xs:flex-row sm:flex-row gap-2 md:gap-3 items-stretch sm:items-center z-10 shadow-sm shrink-0">
+        <div className="shrink-0">
+          <h2 className="text-base md:text-xl font-display font-bold text-text-primary truncate">Find your relative</h2>
           <p className="text-xs text-text-secondary hidden sm:block">Explore directional lineage clusters around a central member</p>
         </div>
-        <div className="flex items-center gap-2">
-          <select
-            value={activeCenterId || ''}
-            onChange={(e) => setCenterId(e.target.value)}
-            className="px-2 md:px-3 py-1.5 md:py-2 border border-border rounded-lg text-xs md:text-sm bg-background min-w-0 flex-1 sm:flex-none sm:min-w-[220px] max-w-[55%] sm:max-w-none"
-          >
-            {renderGroupedPersonOptions(persons)}
-          </select>
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="relative w-full min-w-0 flex-1">
+            <input
+              type="text"
+              value={personQuery}
+              onChange={(e) => { setPersonQuery(e.target.value); setPersonListOpen(true); }}
+              onFocus={() => setPersonListOpen(true)}
+              onBlur={() => setTimeout(() => setPersonListOpen(false), 200)}
+              placeholder="Type 3 letters..."
+              className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-background"
+            />
+            {personListOpen && personQuery.trim().length >= 3 && personSuggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-border rounded-xl shadow-lg z-50 max-h-56 overflow-y-auto">
+                {personSuggestions.map(p => {
+                  const year = p.birthDate ? new Date(p.birthDate).getFullYear() : '?';
+                  return (
+                    <button
+                      type="button"
+                      key={p.id}
+                      className="w-full text-left px-3 py-2 hover:bg-slate-50 text-xs md:text-sm whitespace-nowrap truncate"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => { setCenterId(p.id); setPersonListOpen(false); }}
+                    >
+                      {(p.lastName || '').toUpperCase()} {p.firstName} ({year})
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
