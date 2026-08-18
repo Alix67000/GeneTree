@@ -21,7 +21,7 @@ export function BottomNav() {
           className={({ isActive }) => `flex flex-col items-center justify-center flex-1 h-full text-xs font-medium transition-colors ${isActive ? 'text-primary' : 'text-text-secondary hover:text-text-primary'}`}
         >
           <FiGitCommit size={20} className="mb-1" />
-          <span>Arbre</span>
+          <span>Tree</span>
         </NavLink>
         
         <NavLink 
@@ -29,7 +29,7 @@ export function BottomNav() {
           className={({ isActive }) => `flex flex-col items-center justify-center flex-1 h-full text-xs font-medium transition-colors ${isActive ? 'text-primary' : 'text-text-secondary hover:text-text-primary'}`}
         >
           <FiImage size={20} className="mb-1" />
-          <span>Galerie</span>
+          <span>Gallery</span>
         </NavLink>
 
         <button 
@@ -45,7 +45,7 @@ export function BottomNav() {
           className={({ isActive }) => `flex flex-col items-center justify-center flex-1 h-full text-xs font-medium transition-colors ${isActive ? 'text-primary' : 'text-text-secondary hover:text-text-primary'}`}
         >
           <FiClock size={20} className="mb-1" />
-          <span>Chrono</span>
+          <span>Timeline</span>
         </NavLink>
 
         {isAdmin ? (
@@ -59,7 +59,7 @@ export function BottomNav() {
         ) : (
           <div className="flex flex-col items-center justify-center flex-1 h-full text-xs font-medium text-text-secondary">
             <FiUser size={20} className="mb-1" />
-            <span>Membre</span>
+            <span>Member</span>
           </div>
         )}
       </nav>

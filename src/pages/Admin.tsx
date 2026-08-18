@@ -94,7 +94,7 @@ export function Admin() {
 
     try {
       if (!formData.emailOrUsername || !formData.password || !formData.displayName) {
-        throw new Error("Tous les champs sont obligatoires.");
+        throw new Error("All fields are required.");
       }
       
       await addDoc(collection(db, 'allowed_users'), {
@@ -107,12 +107,12 @@ export function Admin() {
       
       logActivity('AJOUT_MEMBRE', `Creating... compte membre ${formData.emailOrUsername}`, currentUser?.email || 'Inconnu');
       
-      setSuccess("Accès membre créé avec succès.");
+      setSuccess("Member access created successfully.");
       setFormData({ emailOrUsername: '', password: '', displayName: '' });
       loadUsers();
       loadLogs();
     } catch (err: any) {
-      setError(err.message || "Une erreur est survenue.");
+      setError(err.message || "An error occurred.");
     } finally {
       setFormLoading(false);
     }
@@ -127,9 +127,9 @@ export function Admin() {
   if (!isAdmin) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-        <h2 className="text-3xl font-bold text-red-600 mb-4">Accès refusé</h2>
-        <p className="text-text-secondary">Cette page est réservée à l'administrateur.</p>
-        <Button className="mt-8" onClick={() => window.history.back()}>Retour</Button>
+        <h2 className="text-3xl font-bold text-red-600 mb-4">Access denied</h2>
+        <p className="text-text-secondary">This page is reserved for the administrator.</p>
+        <Button className="mt-8" onClick={() => window.history.back()}>Back</Button>
       </div>
     );
   }
@@ -266,7 +266,7 @@ export function Admin() {
                       <p className="text-sm text-text-secondary">{log.details}</p>
                     </div>
                     <div className="text-xs text-text-tertiary whitespace-nowrap">
-                      {log.timestamp ? new Date(log.timestamp.toDate()).toLocaleString('fr-FR') : 'Just now'}
+                      {log.timestamp ? new Date(log.timestamp.toDate()).toLocaleString('en-US') : 'Just now'}
                     </div>
                   </div>
                 ))}

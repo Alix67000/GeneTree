@@ -179,7 +179,7 @@ export function PassportView() {
                   </div>
                   <h2 className="text-2xl font-display font-bold">{centerPerson.firstName} {centerPerson.lastName}</h2>
                   {centerPerson.maidenName && (
-                    <p className="text-sm opacity-80 mt-1">née {centerPerson.maidenName}</p>
+                    <p className="text-sm opacity-80 mt-1">nee {centerPerson.maidenName}</p>
                   )}
                 </div>
                 

@@ -44,9 +44,9 @@ export function formatPersonAge(birthDate?: string, deathDate?: string, isLiving
     
     // If we only have the year, it could be less exact, but let's just stick to the calculation
     if (birthDate.length === 4) {
-      return `Né(e) en ${birthYear} (~${age} ans)`;
+      return `Born ${birthYear} (~${age} yrs)`;
     }
-    return `${age} ans (né(e) en ${birthYear})`;
+    return `${age} yrs (born ${birthYear})`;
   } else {
     if (deathDate) {
       const death = new Date(deathDate);
@@ -57,9 +57,9 @@ export function formatPersonAge(birthDate?: string, deathDate?: string, isLiving
         if (m < 0 || (m === 0 && death.getDate() < birth.getDate())) {
           age--;
         }
-        return `${birthYear} – ${deathYear} (${age} ans)`;
+        return `${birthYear} – ${deathYear} (${age} yrs)`;
       }
     }
-    return `Né(e) en ${birthYear} (Décédé(e))`;
+    return `Born ${birthYear} (Deceased)`;
   }
 }
