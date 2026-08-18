@@ -4,13 +4,11 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Link } from 'react-router-dom';
 import { getInitials, formatPersonAge } from '@/lib/utils';
-import { BirthdaysWidget } from '@/components/BirthdaysWidget';
 import { 
   FiPlus, FiMinus, FiRefreshCcw, FiUser, FiGrid, FiGitCommit, 
   FiHeart, FiEye, FiArrowUp, FiArrowDown, FiDownload, FiZoomIn, FiZoomOut, FiMaximize
 } from 'react-icons/fi';
 import { Person } from '@/types';
-import { renderGroupedPersonOptions } from '@/lib/personUtils';
 
 export function Tree() {
   const { persons, loading } = usePersons();
@@ -20,6 +18,24 @@ export function Tree() {
   const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
   
   const [highlightedPersonId, setHighlightedPersonId] = useState<string | null>(null);
+
+  const [personQuery, setPersonQuery] = useState('');
+  const [personListOpen, setPersonListOpen] = useState(false);
+
+  useEffect(() => {
+    const id = focusedPersonId || centralPersonId;
+    if (!id) { setPersonQuery(''); return; }
+    const p = persons.find(x => x.id === id);
+    if (p) setPersonQuery(`${(p.lastName || '').toUpperCase()} ${p.firstName}`);
+  }, [focusedPersonId, centralPersonId, persons]);
+
+  const personSuggestions = useMemo(() => {
+    if (personQuery.trim().length < 3) return [];
+    const q = personQuery.toLowerCase();
+    return [...persons]
+      .filter(p => `${p.firstName} ${p.lastName}`.toLowerCase().includes(q))
+      .sort((a, b) => (a.lastName || '').localeCompare(b.lastName || '') || (a.firstName || '').localeCompare(b.firstName || ''));
+  }, [personQuery, persons]);
 
   // Canvas Pan & Zoom State
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
@@ -240,8 +256,8 @@ export function Tree() {
     });
   };
 
-  useEffect(() => {
-    if (!initialCenterDone.current && persons.length > 0 && xPos.size > 0 && containerRef.current) {
+  const fitAllCards = () => {
+    if (persons.length > 0 && xPos.size > 0 && containerRef.current) {
       let minX = Infinity;
       let maxX = -Infinity;
       let minY = Infinity;
@@ -264,7 +280,7 @@ export function Tree() {
       const scaleY = (containerRect.height - 40) / height;
       
       let scale = Math.min(scaleX, scaleY);
-      scale = Math.max(0.3, Math.min(scale, 1.2)); // clamp
+      scale = Math.max(0.12, Math.min(scale, 1.2)); // clamp
       
       const centerX = (minX + maxX) / 2;
       const centerY = (minY + maxY) / 2;
@@ -274,7 +290,12 @@ export function Tree() {
         y: containerRect.height / 2 - centerY * scale,
         scale: scale
       });
-      
+    }
+  };
+
+  useEffect(() => {
+    if (!initialCenterDone.current && persons.length > 0 && xPos.size > 0 && containerRef.current) {
+      fitAllCards();
       initialCenterDone.current = true;
     }
   }, [persons, xPos, levels]);
@@ -336,7 +357,7 @@ export function Tree() {
     });
   };
 
-  const handleResetZoom = () => setTransform({ x: 0, y: 0, scale: 1 });
+  const handleResetZoom = () => fitAllCards();
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('.person-card') || (e.target as HTMLElement).closest('button')) return;
@@ -505,45 +526,50 @@ export function Tree() {
   };
 
   return (
-    <div className="space-y-6 pb-6">
+    <div className="flex flex-col overflow-hidden overscroll-none bg-background -mx-2 -my-4 sm:-mx-4 md:-mx-8 h-[calc(100dvh-9rem)] md:h-[calc(100dvh-4rem)]">
       {/* Header & Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface p-4 rounded-xl border border-border shadow-sm w-full">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-display font-semibold text-text-primary">Family Tree</h1>
-          <p className="text-xs text-text-secondary">Explore and navigate your family lineage</p>
+      <div className="px-3 py-2 md:p-4 border-b border-border bg-surface flex flex-row items-center gap-2 md:gap-3 z-10 shadow-sm shrink-0">
+        <div className="shrink-0">
+          <h1 className="text-base md:text-xl font-display font-bold text-text-primary truncate">Find your relative</h1>
         </div>
-        <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
-          <div className="inline-flex h-9 p-0.5 bg-background border border-border rounded-lg shrink-0">
-            <button
-              onClick={() => setViewMode('canvas')}
-              className={`px-3 h-full rounded-md text-xs font-medium transition-colors ${
-                viewMode === 'canvas' || viewMode === 'tree' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary'
-              }`}
-            >
-              Canevas Infini
-            </button>
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`px-3 h-full rounded-md text-xs font-medium transition-colors ${
-                viewMode === 'grid' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary'
-              }`}
-            >
-              Grille
-            </button>
-          </div>
-          <Link
-            to="/person/add"
-            className="h-9 px-4 inline-flex items-center justify-center gap-1.5 bg-primary text-white rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors whitespace-nowrap shrink-0 shadow-sm"
-          >
-            + Add Person
-          </Link>
+        <div className="relative w-full min-w-0 flex-1">
+          <input
+            type="text"
+            value={personQuery}
+            onChange={(e) => { setPersonQuery(e.target.value); setPersonListOpen(true); }}
+            onFocus={() => setPersonListOpen(true)}
+            onBlur={() => setTimeout(() => setPersonListOpen(false), 200)}
+            placeholder="Type 3 letters..."
+            className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-background"
+          />
+          {personListOpen && personQuery.trim().length >= 3 && personSuggestions.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-border rounded-xl shadow-lg z-50 max-h-56 overflow-y-auto">
+              {personSuggestions.map(p => {
+                const year = p.birthDate ? new Date(p.birthDate).getFullYear() : '?';
+                return (
+                  <button
+                    type="button"
+                    key={p.id}
+                    className="w-full text-left px-3 py-2 hover:bg-slate-50 text-xs md:text-sm whitespace-nowrap truncate"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => { handleSelectCentral(p.id); setPersonListOpen(false); }}
+                  >
+                    {(p.lastName || '').toUpperCase()} {p.firstName} ({year})
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
+        <div className="inline-flex h-9 p-0.5 bg-background border border-border rounded-lg shrink-0">
+          <button onClick={() => setViewMode('canvas')} className={`px-2 md:px-3 h-full rounded-md text-xs font-medium ${viewMode === 'canvas' || viewMode === 'tree' ? 'bg-primary text-white' : 'text-text-secondary'}`}>Canvas</button>
+          <button onClick={() => setViewMode('grid')} className={`px-2 md:px-3 h-full rounded-md text-xs font-medium ${viewMode === 'grid' ? 'bg-primary text-white' : 'text-text-secondary'}`}>Grid</button>
+        </div>
+        <Link to="/person/add" className="h-9 px-3 inline-flex items-center justify-center bg-primary text-white rounded-lg text-xs font-medium shrink-0">+ Add</Link>
       </div>
 
-      <BirthdaysWidget />
-
       {persons.length === 0 ? (
-        <Card className="text-center py-16 flex flex-col items-center justify-center space-y-4 bg-white">
+        <Card className="text-center py-16 flex flex-col items-center justify-center space-y-4 bg-white m-4">
           <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4">
             <FiUser size={24} />
           </div>
@@ -554,7 +580,7 @@ export function Tree() {
           </Link>
         </Card>
       ) : viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4 overflow-y-auto flex-1 min-h-0">
           {persons.map(person => (
             <Card 
               key={person.id} 
@@ -592,10 +618,9 @@ export function Tree() {
         </div>
       ) : (
         /* Infinite Canvas Tree Mode */
-        <div className="space-y-4">
-          <div 
-            ref={containerRef}
-            className={`relative w-full h-[78vh] min-h-[600px] bg-slate-50 rounded-2xl border border-border shadow-inner overflow-hidden active:cursor-grabbing touch-none select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+        <div 
+          ref={containerRef}
+          className={`relative w-full flex-1 min-h-0 bg-slate-50 rounded-2xl border border-border shadow-inner overflow-hidden active:cursor-grabbing touch-none select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -794,8 +819,7 @@ export function Tree() {
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 }
