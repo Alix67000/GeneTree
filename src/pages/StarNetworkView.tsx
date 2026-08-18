@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { usePersons } from '@/hooks/usePersons';
 import { Person } from '@/types';
 import { getInitials } from '@/lib/utils';
@@ -185,6 +185,46 @@ export function StarNetworkView() {
     }));
   }, [nodes, customPositions]);
 
+  const canvasRef = useRef<HTMLDivElement>(null);
+
+  const fitAllCards = () => {
+    const el = canvasRef.current;
+    if (!el || positionedNodes.length === 0) return;
+    const canvasW = el.clientWidth;
+    const canvasH = el.clientHeight;
+    if (canvasW < 10 || canvasH < 10) return;
+
+    const CARD_W = 150;
+    const CARD_H = 150;
+    const PAD = 28;
+
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    positionedNodes.forEach(n => {
+      minX = Math.min(minX, n.x - CARD_W / 2);
+      maxX = Math.max(maxX, n.x + CARD_W / 2);
+      minY = Math.min(minY, n.y - CARD_H / 2);
+      maxY = Math.max(maxY, n.y + CARD_H / 2);
+    });
+
+    const contentW = Math.max(maxX - minX, 1);
+    const contentH = Math.max(maxY - minY, 1);
+    const scale = Math.min((canvasW - PAD * 2) / contentW, (canvasH - PAD * 2) / contentH, 1);
+    const clamped = Math.max(scale, 0.12);
+
+    const graphCx = (minX + maxX) / 2 + window.innerWidth / 2;
+    const graphCy = (minY + maxY) / 2 + window.innerHeight / 2;
+    setTransform({
+      x: -(graphCx - canvasW / 2) * clamped,
+      y: -(graphCy - canvasH / 2) * clamped,
+      scale: clamped,
+    });
+  };
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => fitAllCards());
+    return () => cancelAnimationFrame(id);
+  }, [activeCenterId, nodes]);
+
   const handleNodeMouseDown = (e: React.MouseEvent, node: StarNode) => {
     e.stopPropagation();
     setDraggingNodeId(node.id);
@@ -327,7 +367,7 @@ export function StarNetworkView() {
     }));
   };
 
-  const handleResetZoom = () => setTransform({ x: 0, y: 0, scale: 1 });
+  const handleResetZoom = () => fitAllCards();
 
   const getColorClasses = (color: string) => {
     switch (color) {
@@ -359,6 +399,7 @@ export function StarNetworkView() {
       </div>
 
       <div
+        ref={canvasRef}
         className="flex-1 relative overflow-hidden bg-[#f8fafc] cursor-grab active:cursor-grabbing select-none touch-none"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
