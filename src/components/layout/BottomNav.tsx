@@ -17,11 +17,11 @@ export function BottomNav() {
     <>
       <nav className="fixed bottom-0 left-0 right-0 h-16 bg-surface border-t border-border flex items-center justify-around z-50 md:hidden pb-safe">
         <NavLink 
-          to="/tree" 
+          to="/star-network" 
           className={({ isActive }) => `flex flex-col items-center justify-center flex-1 h-full text-xs font-medium transition-colors ${isActive ? 'text-primary' : 'text-text-secondary hover:text-text-primary'}`}
         >
-          <FiGitCommit size={20} className="mb-1" />
-          <span>Tree</span>
+          <FiStar size={20} className="mb-1" />
+          <span>Star</span>
         </NavLink>
         
         <NavLink 
@@ -89,12 +89,12 @@ export function BottomNav() {
               <span className="text-sm font-medium text-center">Solar Kinship</span>
             </NavLink>
             <NavLink 
-              to="/star-network" 
+              to="/tree" 
               onClick={() => setDrawerOpen(false)}
               className={({ isActive }) => `flex flex-col items-center gap-2 p-4 rounded-xl border ${isActive ? 'border-primary bg-primary/5 text-primary' : 'border-border bg-background text-text-secondary hover:border-primary/50 hover:text-primary'}`}
             >
-              <FiStar size={28} />
-              <span className="text-sm font-medium text-center">Star Network</span>
+              <FiGitCommit size={28} />
+              <span className="text-sm font-medium text-center">Family Tree</span>
             </NavLink>
             <NavLink 
               to="/pathfinder" 

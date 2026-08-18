@@ -392,8 +392,8 @@ export function AddPerson() {
         });
         logActivity('AJOUT_PERSONNE', `Ajout de ${formData.firstName} ${formData.lastName}`, currentUser?.email || currentUser?.displayName || 'Inconnu');
       }
-      // Navigate back to the tree view after successful save
-      navigate('/tree');
+      // Navigate back to the star network view after successful save
+      navigate('/star-network');
     } catch (error) {
       console.error('Error saving person:', error);
       alert('Failed to save person. See console for details.');

@@ -210,7 +210,7 @@ export function PersonDetail() {
                     }
                     await deleteDoc(doc(db, COLLECTIONS.PERSONS, id));
                     logActivity('SUPPRESSION_PERSONNE', `Suppression de ${person.firstName} ${person.lastName}`, currentUser?.email || currentUser?.displayName || 'Inconnu');
-                    navigate('/tree');
+                    navigate('/star-network');
                   } catch (err) {
                     console.error('Delete failed:', err);
                   }

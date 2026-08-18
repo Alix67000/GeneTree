@@ -45,8 +45,8 @@ export function Home() {
           Continue building your family legacy. Add new relatives, preserve memories, and explore your ancestry.
         </p>
         <div className="flex gap-4">
-          <Link to="/tree">
-            <Button size="lg">View Family Tree</Button>
+          <Link to="/star-network">
+            <Button size="lg">View Star Network</Button>
           </Link>
           <Link to="/person/add">
             <Button variant="outline" size="lg">Add Person</Button>
