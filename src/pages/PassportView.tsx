@@ -1,10 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { usePersons } from '@/hooks/usePersons';
 import { Person } from '@/types';
 import { getInitials } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { FiUser, FiCalendar, FiMapPin, FiInfo } from 'react-icons/fi';
-import { renderGroupedPersonOptions } from '@/lib/personUtils';
 import { PlaceWithFlag } from '@/components/ui/PlaceWithFlag';
 
 interface GroupedRelative {
@@ -19,6 +18,23 @@ export function PassportView() {
 
   const activeCenterId = centerId || (persons.length > 0 ? persons[0].id : '');
   const centerPerson = persons.find(p => p.id === activeCenterId);
+
+  const [personQuery, setPersonQuery] = useState('');
+  const [personListOpen, setPersonListOpen] = useState(false);
+
+  useEffect(() => {
+    if (!activeCenterId) { setPersonQuery(''); return; }
+    const p = persons.find(x => x.id === activeCenterId);
+    if (p) setPersonQuery(`${(p.lastName || '').toUpperCase()} ${p.firstName}`);
+  }, [activeCenterId, persons]);
+
+  const personSuggestions = useMemo(() => {
+    if (personQuery.trim().length < 3) return [];
+    const q = personQuery.toLowerCase();
+    return [...persons]
+      .filter(p => `${p.firstName} ${p.lastName}`.toLowerCase().includes(q))
+      .sort((a, b) => (a.lastName || '').localeCompare(b.lastName || '') || (a.firstName || '').localeCompare(b.firstName || ''));
+  }, [personQuery, persons]);
 
   const getChildren = (id: string) => persons.filter(x => x.parentId1 === id || x.parentId2 === id);
   const getSpouses = (id: string) => {
@@ -141,144 +157,187 @@ export function PassportView() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] bg-[#f4f7f6]">
-      <div className="p-4 border-b border-border bg-white flex flex-col sm:flex-row gap-4 justify-between items-center z-10 shadow-sm">
-        <div>
-          <h2 className="text-xl font-display font-bold text-text-primary">Family Passport</h2>
-          <p className="text-xs text-text-secondary">Genealogical Identity & Lineage Branches</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <select
-            value={activeCenterId}
-            onChange={(e) => setCenterId(e.target.value)}
-            className="px-4 py-2.5 border border-border rounded-xl text-sm bg-surface min-w-[250px] shadow-sm focus:ring-2 focus:ring-primary/20 outline-none"
-          >
-            {renderGroupedPersonOptions(persons)}
-          </select>
+    <div className="flex flex-col overflow-hidden overscroll-none bg-[#f4f7f6] -mx-2 -my-4 sm:-mx-4 md:-mx-8 h-[calc(100dvh-8rem)] md:h-[calc(100dvh-4rem)]">
+      {/* Header ONE row */}
+      <div className="px-2 py-1.5 md:px-4 md:py-2 border-b border-border bg-white flex flex-row items-center gap-2 shrink-0 z-10">
+        <h2 className="text-sm md:text-xl font-display font-bold text-text-primary truncate shrink-0">Find your relative</h2>
+        <div className="relative w-full min-w-0 flex-1">
+          <input
+            type="text"
+            value={personQuery}
+            onChange={(e) => { setPersonQuery(e.target.value); setPersonListOpen(true); }}
+            onFocus={() => setPersonListOpen(true)}
+            onBlur={() => setTimeout(() => setPersonListOpen(false), 200)}
+            placeholder="Type 3 letters..."
+            className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-background"
+          />
+          {personListOpen && personQuery.trim().length >= 3 && personSuggestions.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-border rounded-xl shadow-lg z-50 max-h-56 overflow-y-auto">
+              {personSuggestions.map(p => {
+                const year = p.birthDate ? new Date(p.birthDate).getFullYear() : '?';
+                return (
+                  <button
+                    type="button"
+                    key={p.id}
+                    className="w-full text-left px-3 py-2 hover:bg-slate-50 text-xs md:text-sm whitespace-nowrap truncate"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => { setCenterId(p.id); setPersonListOpen(false); }}
+                  >
+                    {(p.lastName || '').toUpperCase()} {p.firstName} ({year})
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-8">
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
-          
-          {/* Identity Card (Passport) */}
-          <div className="lg:w-[400px] flex-shrink-0">
-            {centerPerson ? (
-              <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-border">
-                <div className="bg-slate-800 p-6 text-center text-white relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-4 opacity-20">
-                    <FiMapPin className="w-24 h-24" />
-                  </div>
-                  <h3 className="text-xs font-bold tracking-widest uppercase opacity-70 mb-6">Genealogical Passport</h3>
-                  <div className="w-32 h-32 mx-auto rounded-xl border-4 border-white/20 shadow-lg bg-surface flex items-center justify-center overflow-hidden mb-4 relative z-10">
+      {/* Main Content Area - No page scroll */}
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden p-2 md:p-4 lg:p-6 gap-3 md:gap-6">
+        
+        {/* Identity Card (Passport) */}
+        <div className="shrink-0 lg:w-[340px] lg:overflow-y-auto">
+          {centerPerson ? (
+            <div className="bg-white rounded-xl shadow-md overflow-hidden border border-border">
+              {/* Header / Main identity section */}
+              <div className="bg-slate-800 p-3 md:p-4 text-white relative overflow-hidden">
+                <div className="hidden md:block absolute top-0 right-0 p-3 opacity-15">
+                  <FiMapPin className="w-16 h-16" />
+                </div>
+                <h3 className="hidden md:block text-[10px] font-bold tracking-widest uppercase opacity-70 mb-3 text-center">Genealogical Passport</h3>
+                
+                {/* Horizontal on mobile, vertical centered on desktop */}
+                <div className="flex flex-row md:flex-col items-center gap-3 md:gap-2">
+                  <div className="w-14 h-14 md:w-24 md:h-24 rounded-lg md:rounded-xl border-2 md:border-4 border-white/20 shadow-md bg-surface flex items-center justify-center overflow-hidden shrink-0 relative z-10">
                     {centerPerson.photoUrl ? (
                       <img src={centerPerson.photoUrl} alt="" className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-4xl text-slate-800 font-display font-bold">{getInitials(centerPerson.firstName, centerPerson.lastName)}</span>
+                      <span className="text-xl md:text-3xl text-slate-800 font-display font-bold">{getInitials(centerPerson.firstName, centerPerson.lastName)}</span>
                     )}
                   </div>
-                  <h2 className="text-2xl font-display font-bold">{centerPerson.firstName} {centerPerson.lastName}</h2>
-                  {centerPerson.maidenName && (
-                    <p className="text-sm opacity-80 mt-1">nee {centerPerson.maidenName}</p>
-                  )}
-                </div>
-                
-                <div className="p-6 space-y-5 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-white">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Age</label>
-                      <p className="font-medium text-slate-800">
-                        {calculateAge(centerPerson.birthDate, centerPerson.deathDate) ?? 'Unknown'}
-                        {centerPerson.deathDate && ' (Deceased)'}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Gender</label>
-                      <p className="font-medium text-slate-800 capitalize">{centerPerson.gender || 'Unknown'}</p>
+                  
+                  <div className="min-w-0 flex-1 md:text-center">
+                    <h2 className="text-base md:text-xl font-display font-bold leading-tight truncate">
+                      {centerPerson.firstName} {(centerPerson.lastName || '').toUpperCase()}
+                    </h2>
+                    {centerPerson.maidenName && (
+                      <p className="text-xs opacity-80 italic truncate">nee {centerPerson.maidenName}</p>
+                    )}
+                    
+                    {/* Quick info row on mobile */}
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] opacity-90 mt-0.5 md:hidden">
+                      <span>Age: {calculateAge(centerPerson.birthDate, centerPerson.deathDate) ?? 'Unknown'}</span>
+                      <span className="capitalize">• {centerPerson.gender || 'Unknown'}</span>
+                      {centerPerson.birthDate && <span>• {formatGregorian(centerPerson.birthDate)}</span>}
                     </div>
                   </div>
+                </div>
+              </div>
+              
+              {/* Detailed info section on md+ */}
+              <div className="hidden md:block p-4 space-y-3.5 bg-white text-xs">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Age</label>
+                    <p className="font-medium text-slate-800 text-xs">
+                      {calculateAge(centerPerson.birthDate, centerPerson.deathDate) ?? 'Unknown'}
+                      {centerPerson.deathDate && ' (Deceased)'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Gender</label>
+                    <p className="font-medium text-slate-800 capitalize text-xs">{centerPerson.gender || 'Unknown'}</p>
+                  </div>
+                </div>
 
-                  <div className="h-px w-full bg-slate-100"></div>
+                <div className="h-px w-full bg-slate-100"></div>
 
+                <div>
+                  <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1">
+                    <FiCalendar /> Date of Birth
+                  </label>
+                  <div className="mt-0.5">
+                    <p className="font-semibold text-slate-800">{formatGregorian(centerPerson.birthDate) || 'Unknown'}</p>
+                    {centerPerson.birthDate && (
+                      <p className="text-[11px] text-slate-500">{formatPersian(centerPerson.birthDate)} (Shamsi)</p>
+                    )}
+                  </div>
+                </div>
+
+                {centerPerson.birthPlace && (
                   <div>
                     <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1">
-                      <FiCalendar /> Date of Birth
+                      <FiMapPin /> Place of Birth
                     </label>
-                    <div className="mt-1">
-                      <p className="text-sm font-semibold text-slate-800">{formatGregorian(centerPerson.birthDate) || 'Unknown'}</p>
-                      {centerPerson.birthDate && (
-                        <p className="text-xs text-slate-500 mt-0.5">{formatPersian(centerPerson.birthDate)} (Shamsi)</p>
-                      )}
-                    </div>
+                    <p className="font-medium text-slate-800 mt-0.5">
+                      <PlaceWithFlag place={centerPerson.birthPlace} />
+                    </p>
                   </div>
+                )}
 
-                  {centerPerson.birthPlace && (
+                {centerPerson.deathDate && (
+                  <>
+                    <div className="h-px w-full bg-slate-100"></div>
                     <div>
                       <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1">
-                        <FiMapPin /> Place of Birth
+                        <FiInfo /> Date of Death
                       </label>
-                      <p className="font-medium text-slate-800 mt-1">
-                        <PlaceWithFlag place={centerPerson.birthPlace} />
-                      </p>
-                    </div>
-                  )}
-
-                  {centerPerson.deathDate && (
-                    <>
-                      <div className="h-px w-full bg-slate-100"></div>
-                      <div>
-                        <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1">
-                          <FiInfo /> Date of Death
-                        </label>
-                        <div className="mt-1">
-                          <p className="text-sm font-semibold text-slate-800">{formatGregorian(centerPerson.deathDate)}</p>
-                          <p className="text-xs text-slate-500 mt-0.5">{formatPersian(centerPerson.deathDate)} (Shamsi)</p>
-                        </div>
+                      <div className="mt-0.5">
+                        <p className="font-semibold text-slate-800">{formatGregorian(centerPerson.deathDate)}</p>
+                        <p className="text-[11px] text-slate-500">{formatPersian(centerPerson.deathDate)} (Shamsi)</p>
                       </div>
-                    </>
-                  )}
-                </div>
+                    </div>
+                  </>
+                )}
               </div>
-            ) : (
-              <div className="bg-white rounded-2xl shadow p-8 text-center text-text-secondary border border-border">
-                No person selected.
-              </div>
-            )}
+            </div>
+          ) : (
+            <div className="bg-white rounded-xl shadow p-4 text-center text-xs text-text-secondary border border-border">
+              No person selected.
+            </div>
+          )}
+        </div>
+
+        {/* Lineage & Branch Navigation */}
+        <div className="flex-1 min-h-0 flex flex-col">
+          {/* Tabs header */}
+          <div className="flex shrink-0 overflow-x-auto no-scrollbar border-b border-slate-200 bg-white rounded-t-xl px-1">
+            <button
+              onClick={() => setActiveTab('immediate')}
+              className={`px-3 py-2.5 text-[11px] md:text-sm md:px-5 font-semibold whitespace-nowrap transition-colors border-b-2 ${activeTab === 'immediate' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+            >
+              Family ({immediate.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('paternal')}
+              className={`px-3 py-2.5 text-[11px] md:text-sm md:px-5 font-semibold whitespace-nowrap transition-colors border-b-2 ${activeTab === 'paternal' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+            >
+              Paternal ({paternal.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('maternal')}
+              className={`px-3 py-2.5 text-[11px] md:text-sm md:px-5 font-semibold whitespace-nowrap transition-colors border-b-2 ${activeTab === 'maternal' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+            >
+              Maternal ({maternal.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('inlaws')}
+              className={`px-3 py-2.5 text-[11px] md:text-sm md:px-5 font-semibold whitespace-nowrap transition-colors border-b-2 ${activeTab === 'inlaws' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+            >
+              In-laws ({inlaws.length})
+            </button>
           </div>
 
-          {/* Lineage & Branch Navigation */}
-          <div className="flex-1 flex flex-col min-w-0">
-            <div className="flex overflow-x-auto hide-scrollbar border-b border-slate-200 mb-6 bg-white rounded-t-2xl shadow-sm px-2 pt-2">
-              <button
-                onClick={() => setActiveTab('immediate')}
-                className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-colors border-b-2 ${activeTab === 'immediate' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-              >
-                Immediate Family ({immediate.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('paternal')}
-                className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-colors border-b-2 ${activeTab === 'paternal' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-              >
-                Paternal Lineage ({paternal.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('maternal')}
-                className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-colors border-b-2 ${activeTab === 'maternal' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-              >
-                Maternal Lineage ({maternal.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('inlaws')}
-                className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-colors border-b-2 ${activeTab === 'inlaws' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-              >
-                In-Laws & Extended ({inlaws.length})
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 pb-8">
+          {/* Relatives list - ONLY this scrolls on mobile */}
+          <div className="flex-1 min-h-0 overflow-y-auto p-2.5 md:p-4 bg-white/60 rounded-b-xl border border-t-0 border-slate-200">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
               {getTabContent().map((rel, idx) => (
-                <div key={`${rel.person.id}-${idx}`} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow group">
-                  <div className="w-14 h-14 rounded-full bg-surface border-2 border-slate-100 flex items-center justify-center overflow-hidden flex-shrink-0 text-slate-400 font-bold">
+                <div
+                  key={`${rel.person.id}-${idx}`}
+                  onClick={() => setCenterId(rel.person.id)}
+                  className="bg-white p-2.5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-3 hover:shadow-md transition-all cursor-pointer group"
+                >
+                  <div className="w-10 h-10 rounded-full bg-surface border border-slate-200 flex items-center justify-center overflow-hidden shrink-0 text-slate-500 font-bold text-xs">
                     {rel.person.photoUrl ? (
                       <img src={rel.person.photoUrl} alt="" className="w-full h-full object-cover" />
                     ) : (
@@ -286,34 +345,36 @@ export function PassportView() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-[10px] font-bold text-primary uppercase tracking-wider mb-0.5">{rel.title}</div>
-                    <h4 className="font-display font-semibold text-slate-800 truncate">
-                      {rel.person.firstName} {rel.person.lastName}
+                    <div className="text-[9px] font-bold text-primary uppercase tracking-wider mb-0.5">{rel.title}</div>
+                    <h4 className="font-display font-semibold text-slate-800 text-xs md:text-sm truncate">
+                      {rel.person.firstName} {(rel.person.lastName || '').toUpperCase()}
                     </h4>
                     {(rel.person.birthDate || rel.person.deathDate) && (
-                      <p className="text-xs text-slate-500 truncate mt-0.5">
+                      <p className="text-[10px] text-slate-500 truncate mt-0.5">
                         {rel.person.birthDate ? new Date(rel.person.birthDate).getFullYear() : '?'} - {rel.person.deathDate ? new Date(rel.person.deathDate).getFullYear() : ''}
                       </p>
                     )}
                   </div>
                   <Link
                     to={`/person/${rel.person.id}`}
-                    className="w-8 h-8 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-7 h-7 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors shrink-0"
+                    title="View Profile"
                   >
-                    <FiUser />
+                    <FiUser size={14} />
                   </Link>
                 </div>
               ))}
               {getTabContent().length === 0 && (
-                <div className="col-span-full py-12 text-center text-slate-400 bg-white rounded-2xl border border-dashed border-slate-200">
-                  <FiUser className="w-8 h-8 mx-auto mb-3 opacity-20" />
-                  <p>No relatives found in this branch.</p>
+                <div className="col-span-full py-10 text-center text-slate-400 bg-white rounded-xl border border-dashed border-slate-200">
+                  <FiUser className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                  <p className="text-xs">No relatives found in this branch.</p>
                 </div>
               )}
             </div>
           </div>
-          
         </div>
+
       </div>
     </div>
   );
